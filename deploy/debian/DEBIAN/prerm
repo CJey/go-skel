@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+  remove|remove-in-favour|deconfigure|deconfigure-in-favour)
+    if [ -x /etc/init.d/{=BINARY_NAME=} ]; then
+      invoke-rc.d {=BINARY_NAME=} stop || exit $?
+      update-rc.d -f {=BINARY_NAME=} remove
+    fi  
+    ;;  
+
+  upgrade|failed-upgrade)
+    ;;  
+
+  *)  
+    echo "prerm called with unknown argument \`$1'" >&2
+    exit 1
+    ;;  
+esac
+
+
+
+exit 0

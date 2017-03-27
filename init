@@ -1,0 +1,114 @@
+#! /bin/sh
+
+# ---------------------------- Configure ----------------------------
+# Required, you should specified as you like
+# go package dir name in src/
+TARGET_NAME=
+# binary name when be installed
+BINARY_NAME=
+# dpkg package
+PACKAGE_NAME=$BINARY_NAME
+# dpkg package description
+PACKAGE_DESCRIPTION="$BINARY_NAME, powered by CJey"
+INSTALL_DIR=/opt/cjey/$BINARY_NAME
+
+# Optional
+#LOG_DIR=/opt/cjey/logs/$BINARY_NAME
+#PID_DIR=/run/cjey
+
+# ------------------------------- Run -------------------------------
+
+_ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
+
+clean() {
+    echo "Notice! Please remove [me] and the extra [.git] dir by your hands"
+}
+
+help() {
+    echo "Usage: $0 {util|service|clean|help}"
+    echo "  $0 nodeploy  # init project as test projects, no deploy"
+    echo "  $0 util      # init project as normal utils"
+    echo "  $0 service   # init project as service"
+    echo "  $0 clean     # how to remove me"
+    echo "  $0 help      # show this message"
+}
+
+case "$1" in
+clean)
+    clean
+    exit
+    ;;
+nodeploy)
+    NODEPLOY=1
+    ;;
+util)
+    ;;
+service)
+    IS_SERVICE=1
+    ;;
+*)
+    help
+    exit
+esac
+
+if [ -z "$TARGET_NAME" -o -z "$BINARY_NAME" -o -z "$PACKAGE_NAME" -o -z "$PACKAGE_DESCRIPTION" -o -z "$INSTALL_DIR" ]; then
+    echo "Please config first"
+    exit 1
+fi
+if [ -z "$LOG_DIR" ]; then
+    LOG_DIR=/opt/cjey/logs/$BINARY_NAME
+fi
+if [ -z "$PID_DIR" ]; then
+    PID_DIR=/run/cjey
+fi
+
+find | grep -vP '^\./\.git/' | while read f; do
+    b="$(basename "$f")"
+    if echo "$b"|grep -qF '{=TARGET_NAME=}'; then
+        mv "$f" "$(dirname "$f")/$(echo "$b" | sed -n "s;{=TARGET_NAME=};$TARGET_NAME;p")"
+    fi
+done
+find | grep -vP '^\./\.git/' | while read f; do
+    b="$(basename "$f")"
+    if echo "$b"|grep -qF '{=BINARY_NAME=}'; then
+        mv "$f" "$(dirname "$f")/$(echo "$b" | sed -n "s;{=BINARY_NAME=};$BINARY_NAME;p")"
+    fi
+done
+
+find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
+    sed -i "s;{=TARGET_NAME=};$TARGET_NAME;g" $f
+done
+find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
+    sed -i "s;{=BINARY_NAME=};$BINARY_NAME;g" $f
+done
+find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
+    sed -i "s;{=PACKAGE_NAME=};$PACKAGE_NAME;g" $f
+done
+find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
+    sed -i "s;{=PACKAGE_DESCRIPTION=};$PACKAGE_DESCRIPTION;g" $f
+done
+find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
+    sed -i "s;{=INSTALL_DIR=};$INSTALL_DIR;g" $f
+done
+find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
+    sed -i "s;{=LOG_DIR=};$LOG_DIR;g" $f
+done
+find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
+    sed -i "s;{=PID_DIR=};$PID_DIR;g" $f
+done
+
+if [ -n "$IS_SERVICE" ]; then
+    echo "Successfully! Initialized as service"
+else
+    if [ -n "$NODEPLOY" ]; then
+        rm -rf deploy
+        echo "Successfully! Initialized as nodeploy"
+    else
+        rm -f deploy/DEBIAN/postinst
+        rm -f deploy/DEBIAN/prerm
+        rm -rf deploy/etc
+        echo "Successfully! Initialized as util"
+    fi
+fi
+
+clean
