@@ -48,7 +48,7 @@ git@github.com:alecthomas/template, master:a0175ee3bccc567396460bf5acd36800cb10c
 # Units - Helpful unit multipliers and functions for Go
 git@github.com:alecthomas/units, master:2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 # Kingpin - A Go (golang) command line and flag parser
-git@github.com:alecthomas/kingpin, master:2051e72a191bd8bd809f36797ffa838b6a3a4cf4
+git@github.com:alecthomas/kingpin, master:7f0871f2e17818990e4eed73f9b5c2f429501228
 
 # >>> Encoding
 # MessagePack encoding for Golang
