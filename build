@@ -27,7 +27,7 @@ readonly EXE ROOT GOPATH
 
 __version() {
     BUILD_TIME=$(date +%s)
-    if which git > /dev/null && [ -d .git ]; then
+    if which git > /dev/null && git status 2>/dev/null >/dev/null; then
         GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
         GIT_NUMBER=$(git log --oneline | wc -l)
         GIT_HASH=$(git log -n1 --pretty=format:%h)
