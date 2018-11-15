@@ -1,0 +1,149 @@
+#! /bin/sh
+
+DEFAULT_APP={=APPNAME=}
+DEFAULT_PKG=main
+
+# _ROOT: 工作目录
+# ROOT: 总是正确指向build脚本所在目录
+_ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
+
+# 支持软连接的方式调用此脚本 (软连接的判断需要移除目录部分)，自动编译并执行
+# 软连接的文件名称即为待编译的包名称 (或预定义的项目名称)
+# 如果有多个main包可以编译，简单的做多个软连接即可
+__softlink() {
+    _d="$(dirname "$1")"
+    _f="$(basename "$1")"
+    cd "$_ROOT" && cd "$_d"
+    if [ -L "$_f" ]; then
+        ROOT="$(dirname "$(readlink -f "$_f")")"
+        APPNAME="$_f"
+        flag_run=1
+    else
+        if [ -n "$2" ]; then
+            APPNAME="$2"
+        else
+            APPNAME=$DEFAULT_APP
+        fi
+    fi
+
+    # 如果app名称和对应的package名称不同，新增case即可
+    case "$APPNAME" in
+    $DEFAULT_APP)
+        PACKAGE=$DEFAULT_PKG
+        ;;
+    *)
+        PACKAGE=$BINAME
+    esac
+
+    PJROOT="$(dirname $ROOT)"
+    CODEROOT="$PJROOT/src"
+}
+__softlink $0 $1
+
+if [ "$APPNAME" = "help" ]; then
+    echo "Usage: $1 {package name or predefined project}"
+    echo "e.g. $1 $DEFAULT_APP"
+    exit 1
+fi
+
+# 检查golang环境
+__check() {
+    GO_DEFAULT=/usr/local/go/bin/go
+    GO=go
+
+    if ! which $GO >/dev/null ; then
+        if [ -x $GO_DEFAULT ]; then
+            GO=$GO_DEFAULT
+        else
+            echo "[Error] go environment not found" >&2
+            exit 1
+        fi
+    fi
+
+    if $GO mod 2>&1 | grep -q -i 'unknown command'; then
+        echo "[Error] low golang version(should be >=1.11), do not support go mod command"
+        exit 1
+    fi
+}
+__check
+
+# 搜集待注入的编译环境信息
+__env() {
+    cd "$PJROOT"
+
+    VERSION="$(head -n1 "$PJROOT/version" 2>/dev/null)"
+    GO_VERSION="$($GO version)"
+    BUILD_RAND="$(head -c 128 /dev/urandom | sha1sum | cut -d' ' -f1)"
+    BUILD_TIME="$(date +%s)"
+
+    if which git 2>/dev/null > /dev/null && git status 2>/dev/null >/dev/null; then
+        GIT_REPO="$(git config --get remote.origin.url 2>/dev/null)"
+        GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+        GIT_HASH="$(git log -n1 --pretty=format:%H-%at 2>/dev/null)"
+        GIT_NUMBER="$(git log --oneline 2>/dev/null | wc -l)"
+        GIT_STATUS_NUMBER="$(git status -s -uall 2>/dev/null | wc -l)"
+        GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | sha1sum | cut -d' ' -f1)"
+
+        BUILD_INDICATOR="$(echo -n -e "$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | sha1sum | cut -d' ' -f1)"
+    fi
+}
+__env
+
+# 编译，使用go mod做包管理
+__build() {
+    cd "$CODEROOT"
+
+    if [ ! -d "$PACKAGE" ]; then
+        echo "[Error] package $PACKAGE not found"
+        exit 1
+    fi
+    if [ ! -r go.mod ]; then
+        echo "[Error] go.mod not found or not readable"
+        exit 1
+    fi
+
+    MODULE="$(cat go.mod | grep ^module | head -n1 | awk '{print $NF}')"
+    TARGET="$1"
+
+    # use to minify binary file size
+    #OPTIONS="-w -s"
+    $GO build -o "$TARGET" -ldflags "\
+        $OPTIONS \
+        -X '$MODULE/build.appname=$APPNAME' \
+        -X '$MODULE/build.version=$VERSION' \
+        -X '$MODULE/build.goVersion=$GO_VERSION' \
+        -X '$MODULE/build.codeRoot=$CODEROOT' \
+        -X '$MODULE/build.gitRepo=$GIT_REPO' \
+        -X '$MODULE/build.gitBranch=$GIT_BRANCH' \
+        -X '$MODULE/build.gitHash=$GIT_HASH' \
+        -X '$MODULE/build.gitNumber=$GIT_NUMBER' \
+        -X '$MODULE/build.gitStatusNumber=$GIT_STATUS_NUMBER' \
+        -X '$MODULE/build.gitStatusHash=$GIT_STATUS_HASH' \
+        -X '$MODULE/build.buildRand=$BUILD_RAND' \
+        -X '$MODULE/build.buildIndicator=$BUILD_INDICATOR' \
+        -X '$MODULE/build.buildTime=$BUILD_TIME'" ./$PACKAGE
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+}
+
+TARGET="$PJROOT/bin/$APPNAME"
+if ! [ -x "$TARGET" -a "$("$TARGET" version --build-indicator 2>/dev/null)" = "$BUILD_INDICATOR" ]; then
+    __build "$TARGET"
+fi
+
+if [ -n "$flag_run" ]; then
+    cd "$_ROOT"
+    "$TARGET" $*
+else
+    show=$TARGET
+    if [ "$_ROOT" = "$PJROOT" ]; then
+        show="bin/$APPNAME"
+    elif [ "$_ROOT" = "$ROOT" -o "$_ROOT" = "$CODEROOT" ]; then
+        show="../bin/$APPNAME"
+    elif [ "$_ROOT" = "$PJROOT/bin" ]; then
+        show="$APPNAME"
+    fi
+
+    echo "Output => $show"
+fi

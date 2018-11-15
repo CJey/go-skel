@@ -1,9 +1,7 @@
 .*.swp
 *~
 .*~
+*.log
 /bin
-/pkg
-/conf/{=BINARY_NAME=}.conf
-/src/github.com/*
-/src/git.coding.net/*
-/src/bitbucket.org/*
+/logs
+/tmp
