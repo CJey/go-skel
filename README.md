@@ -25,8 +25,13 @@ Go skeleton
 Appname      {=APPNAME=}
 Version      0.0.0
 
-BuildHash    794af187d338b758b9b53e5e2debd66881f08855
-BuildInfo    go-1.11.2-linux/amd64 @ 2018-11-12 10:43:53
+GitTrace     5.8df6caf
+GitBranch    master
+GitHash      8df6caffcf4197aed825c3cc39ec4e66e79162da @ 2018-11-15 22:03:52
+GitRepo      git@github.com:CJey/go-skel.git
+
+BuildHash    9b50ee3834e43d79ebd20d17644c4a24ffe161a4
+BuildInfo    go-1.11.2-linux/amd64 @ 2018-11-15 22:04:02
 ```
 
 ### 编译
