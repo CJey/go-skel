@@ -1,12 +1,12 @@
-package main
+package version
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
-
-	"{=APPNAME=}/build"
+	"github.com/spf13/viper"
 )
+
+var vpFlag *viper.Viper
+var vpConf *viper.Viper
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
@@ -25,13 +25,11 @@ gitShortHash: 7 chars at current commit hash code's head
 gitStatusNumber: how many different files (or untracked by git) compare to current commit
 gitStatusHash: 7 chars at the hash code's head which indicate different
 `,
-	Run: RunVersion,
-	//TraverseChildren: true,
+	PreRun: preRun,
+	Run:    run,
 }
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
-
 	versionCmd.Flags().Bool("build-indicator", false, "show indicator that injected while building")
 	versionCmd.Flags().MarkHidden("build-indicator")
 
@@ -39,13 +37,8 @@ func init() {
 	versionCmd.Flags().MarkHidden("build-hash")
 }
 
-func RunVersion(cmd *cobra.Command, args []string) {
-	switch {
-	case vpFlag.GetBool("build-indicator"):
-		fmt.Println(build.BuildIndicator())
-	case vpFlag.GetBool("build-hash"):
-		fmt.Println(build.BuildHash())
-	default:
-		fmt.Print(build.Info())
-	}
+func RegisterTo(father *cobra.Command, flag, conf *viper.Viper) {
+	father.AddCommand(versionCmd)
+	vpFlag = flag
+	vpConf = conf
 }
