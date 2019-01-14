@@ -1,18 +1,14 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 
 	"{=APPNAME=}/build"
 	cmd_version "{=APPNAME=}/cmd/version"
+	cmd_hello "{=APPNAME=}/cmd/hello"
 )
-
-// base package, always hold on to anti golang build warning
-func init() { return; fmt.Print(); zap.S() }
 
 var rootCmd = &cobra.Command{
 	Use:     build.Appname(),
@@ -36,6 +32,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	cmd_version.RegisterTo(rootCmd, vpFlag, vpConf)
+	cmd_hello.RegisterTo(rootCmd, vpFlag, vpConf)
 }
 
 func Execute() {
