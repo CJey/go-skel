@@ -8,7 +8,7 @@ import (
 var vpFlag *viper.Viper
 var vpConf *viper.Viper
 
-var versionCmd = &cobra.Command{
+var cmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show full version infomation.",
 	Long: `Show full version infomation.
@@ -30,15 +30,15 @@ gitStatusHash: 7 chars at the hash code's head which indicate different
 }
 
 func init() {
-	versionCmd.Flags().Bool("build-indicator", false, "show indicator that injected while building")
-	versionCmd.Flags().MarkHidden("build-indicator")
+	cmd.Flags().Bool("build-indicator", false, "show indicator that injected while building")
+	cmd.Flags().MarkHidden("build-indicator")
 
-	versionCmd.Flags().Bool("build-hash", false, "show build hash code")
-	versionCmd.Flags().MarkHidden("build-hash")
+	cmd.Flags().Bool("build-hash", false, "show build hash code")
+	cmd.Flags().MarkHidden("build-hash")
 }
 
 func RegisterTo(father *cobra.Command, flag, conf *viper.Viper) {
-	father.AddCommand(versionCmd)
+	father.AddCommand(cmd)
 	vpFlag = flag
 	vpConf = conf
 }
