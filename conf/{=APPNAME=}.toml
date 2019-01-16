@@ -1,7 +1,7 @@
 # TOML
 [log]
     level       = "info"   # debug, info, warn, error, panic, fatal
-    file        = "stderr" # stderr, stdout, or other valid file path (log.log, ./stdout, etc.)
+    file        = "{=APPNAME=}.log" # stderr, stdout, or other valid file path (log.log, ./stdout, etc.)
     disable     = false
     hide-level  = false
     hide-caller = false

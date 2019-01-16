@@ -18,6 +18,7 @@ var rootCmd = &cobra.Command{
 	Long:  ``,
 
 	PersistentPreRun: func(c *cobra.Command, args []string) {
+        // global handlers
 		configHandler(c, args)
 		logHandler(c, args)
 	},
