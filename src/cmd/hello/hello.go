@@ -24,3 +24,7 @@ func RegisterTo(father *cobra.Command, flag, conf *viper.Viper) {
 	vpFlag = flag
 	vpConf = conf
 }
+
+func Called(c *cobra.Command) bool {
+	return c == cmd
+}
