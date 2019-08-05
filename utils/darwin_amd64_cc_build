@@ -1,0 +1,8 @@
+#! /bin/sh
+
+_ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
+
+GOOS=darwin
+GOARCH=amd64
+
+GOOS=$GOOS GOARCH=$GOARCH ./build $*

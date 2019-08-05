@@ -24,6 +24,13 @@ __softlink() {
         else
             APPNAME=$DEFAULT_APP
         fi
+        if [ -n "$3" ]; then
+            if [ "$(echo "$3" | head -c1)" = "/" ]; then
+                TARGET="$3"
+            else
+                TARGET="$_ROOT/$3"
+            fi
+        fi
     fi
 
     # 如果app名称和对应的package名称不同，新增case即可
@@ -38,11 +45,12 @@ __softlink() {
     PJROOT="$(dirname $ROOT)"
     CODEROOT="$PJROOT/src"
 }
-__softlink $0 $1
+__softlink $0 $1 $2
 
+# also, cross compile with env GOOS & GOARCH
 if [ "$APPNAME" = "help" ]; then
-    echo "Usage: $1 {package name or predefined project}"
-    echo "e.g. $1 $DEFAULT_APP"
+    echo "Usage: $0 {package name or predefined project} [target file]"
+    echo "e.g. $0 $DEFAULT_APP"
     exit 1
 fi
 
@@ -89,6 +97,19 @@ __env() {
 }
 __env
 
+if [ "$APPNAME" = "env" ]; then
+    echo "APPNAME=$DEFAULT_APP"
+    echo "VERSION=$VERSION"
+    echo "GO_VERSION=$GO_VERSION"
+    echo "CODEROOT=$CODEROOT"
+    echo "GIT_REPO=$GIT_REPO"
+    echo "GIT_HASH=$GIT_HASH"
+    echo "GIT_NUMBER=$GIT_NUMBER"
+    echo "GIT_STATUS_NUMBER=$GIT_STATUS_NUMBER"
+    echo "GIT_STATUS_HASH=$GIT_STATUS_HASH"
+    exit
+fi
+
 # 编译，使用go mod做包管理
 __build() {
     cd "$CODEROOT"
@@ -102,32 +123,40 @@ __build() {
         exit 1
     fi
 
-    MODULE="$(cat go.mod | grep ^module | head -n1 | awk '{print $NF}')"
-    TARGET="$1"
+    _module="$(cat go.mod | grep ^module | head -n1 | awk '{print $NF}')"
+    _target="$1"
 
     # use to minify binary file size
     #OPTIONS="-w -s"
-    $GO build -o "$TARGET" -ldflags "\
+    $GO build -o "$_target" -ldflags "\
         $OPTIONS \
-        -X '$MODULE/build.appname=$APPNAME' \
-        -X '$MODULE/build.version=$VERSION' \
-        -X '$MODULE/build.goVersion=$GO_VERSION' \
-        -X '$MODULE/build.codeRoot=$CODEROOT' \
-        -X '$MODULE/build.gitRepo=$GIT_REPO' \
-        -X '$MODULE/build.gitBranch=$GIT_BRANCH' \
-        -X '$MODULE/build.gitHash=$GIT_HASH' \
-        -X '$MODULE/build.gitNumber=$GIT_NUMBER' \
-        -X '$MODULE/build.gitStatusNumber=$GIT_STATUS_NUMBER' \
-        -X '$MODULE/build.gitStatusHash=$GIT_STATUS_HASH' \
-        -X '$MODULE/build.buildRand=$BUILD_RAND' \
-        -X '$MODULE/build.buildIndicator=$BUILD_INDICATOR' \
-        -X '$MODULE/build.buildTime=$BUILD_TIME'" ./$PACKAGE
+        -X '$_module/build.appname=$APPNAME' \
+        -X '$_module/build.version=$VERSION' \
+        -X '$_module/build.goVersion=$GO_VERSION' \
+        -X '$_module/build.codeRoot=$CODEROOT' \
+        -X '$_module/build.gitRepo=$GIT_REPO' \
+        -X '$_module/build.gitBranch=$GIT_BRANCH' \
+        -X '$_module/build.gitHash=$GIT_HASH' \
+        -X '$_module/build.gitNumber=$GIT_NUMBER' \
+        -X '$_module/build.gitStatusNumber=$GIT_STATUS_NUMBER' \
+        -X '$_module/build.gitStatusHash=$GIT_STATUS_HASH' \
+        -X '$_module/build.buildRand=$BUILD_RAND' \
+        -X '$_module/build.buildIndicator=$BUILD_INDICATOR' \
+        -X '$_module/build.buildTime=$BUILD_TIME'" ./$PACKAGE
     if [ $? -ne 0 ]; then
         exit 1
     fi
 }
 
-TARGET="$PJROOT/bin/$APPNAME"
+if [ -z "$TARGET" ]; then
+    TARGET="$PJROOT/bin/$APPNAME"
+    if [ -n "$GOOS" ]; then
+        TARGET="$TARGET"_"$GOOS"
+    fi
+    if [ -n "$GOARCH" ]; then
+        TARGET="$TARGET"_"$GOARCH"
+    fi
+fi
 if ! [ -x "$TARGET" -a "$("$TARGET" version --build-indicator 2>/dev/null)" = "$BUILD_INDICATOR" ]; then
     __build "$TARGET"
 fi
@@ -136,14 +165,5 @@ if [ -n "$flag_run" ]; then
     cd "$_ROOT"
     "$TARGET" $*
 else
-    show=$TARGET
-    if [ "$_ROOT" = "$PJROOT" ]; then
-        show="bin/$APPNAME"
-    elif [ "$_ROOT" = "$ROOT" -o "$_ROOT" = "$CODEROOT" ]; then
-        show="../bin/$APPNAME"
-    elif [ "$_ROOT" = "$PJROOT/bin" ]; then
-        show="$APPNAME"
-    fi
-
-    echo "Output => $show"
+    echo "Output => $TARGET"
 fi
