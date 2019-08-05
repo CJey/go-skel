@@ -15,7 +15,7 @@ __softlink() {
     _f="$(basename "$1")"
     cd "$_ROOT" && cd "$_d"
     if [ -L "$_f" ]; then
-        ROOT="$(dirname "$(readlink -f "$_f")")"
+        ROOT="$(dirname "$(pwd -P)/$(readlink -- "$_f")")"
         APPNAME="$_f"
         flag_run=1
     else

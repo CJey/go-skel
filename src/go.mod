@@ -1,4 +1,4 @@
-module jjjjj
+module {=APPNAME=}
 
 go 1.12
 

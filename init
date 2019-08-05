@@ -12,8 +12,12 @@ APPNAME="$1"
 
 _ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
 
+sedi () {
+    sed --version >/dev/null 2>&1 && sed -i -- "$@" || sed -i "" "$@"
+}
+
 # update file name
-find | grep -vP '^\./\.git/' | while read f; do
+find . | grep -v '^\./\.git/' | while read f; do
     b="$(basename "$f")"
     if echo "$b"|grep -qF '{=APPNAME=}'; then
         mv "$f" "$(dirname "$f")/$(echo "$b" | sed -n "s;{=APPNAME=};$APPNAME;p")"
@@ -21,9 +25,11 @@ find | grep -vP '^\./\.git/' | while read f; do
 done
 
 # update file content
-find -type f | grep -vP '^\./\.git/' | grep -vP '^\./init' | while read f; do
-    sed -i "s;{=APPNAME=};$APPNAME;g" $f
+find . -type f | grep -v '^\./\.git/' | egrep -v '^\./init' | while read f; do
+    sedi "s;{=APPNAME=};$APPNAME;g" $f
 done
+
+ln -sf utils/build "$APPNAME"
 
 echo "Success!"
 echo "Please remove [me] and the extra [.git] dir by your hands"
