@@ -88,8 +88,8 @@ __env() {
         GIT_REPO="$(git config --get remote.origin.url 2>/dev/null)"
         GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
         GIT_HASH="$(git log -n1 --pretty=format:%H-%at 2>/dev/null)"
-        GIT_NUMBER="$(git log --oneline 2>/dev/null | wc -l)"
-        GIT_STATUS_NUMBER="$(git status -s -uall 2>/dev/null | wc -l)"
+        GIT_NUMBER="$(git log --oneline 2>/dev/null | wc -l | awk '{print $1}')"
+        GIT_STATUS_NUMBER="$(git status -s -uall 2>/dev/null | wc -l | awk '{print $1}')"
         GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | shasum | cut -d' ' -f1)"
 
         BUILD_INDICATOR="$(echo -n -e "$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | shasum | cut -d' ' -f1)"
