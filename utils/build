@@ -81,7 +81,7 @@ __env() {
 
     VERSION="$(head -n1 "$PJROOT/version" 2>/dev/null)"
     GO_VERSION="$($GO version)"
-    BUILD_RAND="$(head -c 128 /dev/urandom | sha1sum | cut -d' ' -f1)"
+    BUILD_RAND="$(head -c 128 /dev/urandom | shasum | cut -d' ' -f1)"
     BUILD_TIME="$(date +%s)"
 
     if which git 2>/dev/null > /dev/null && git status 2>/dev/null >/dev/null; then
@@ -90,9 +90,9 @@ __env() {
         GIT_HASH="$(git log -n1 --pretty=format:%H-%at 2>/dev/null)"
         GIT_NUMBER="$(git log --oneline 2>/dev/null | wc -l)"
         GIT_STATUS_NUMBER="$(git status -s -uall 2>/dev/null | wc -l)"
-        GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | sha1sum | cut -d' ' -f1)"
+        GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | shasum | cut -d' ' -f1)"
 
-        BUILD_INDICATOR="$(echo -n -e "$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | sha1sum | cut -d' ' -f1)"
+        BUILD_INDICATOR="$(echo -n -e "$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | shasum | cut -d' ' -f1)"
     fi
 }
 __env
