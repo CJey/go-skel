@@ -126,10 +126,16 @@ __build() {
     _module="$(cat go.mod | grep ^module | head -n1 | awk '{print $NF}')"
     _target="$1"
 
-    # use to minify binary file size
-    #OPTIONS="-w -s"
-    $GO build -o "$_target" -ldflags "\
-        $OPTIONS \
+    # minify binary file size, do not use if you known what you are doint
+    #LDOPTIONS="-w -s"
+
+    # disable optimization, useful for dlv debugging
+    if [ -n "$flag_run" ]; then
+        GCOPTIONS="all=-N -l"
+    fi
+    #GCOPTIONS="all=-N -l"
+    $GO build -o "$_target" -gcflags="$GCOPTIONS" -ldflags "\
+        $LDOPTIONS \
         -X '$_module/build.appname=$APPNAME' \
         -X '$_module/build.version=$VERSION' \
         -X '$_module/build.goVersion=$GO_VERSION' \
