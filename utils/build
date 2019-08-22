@@ -7,6 +7,16 @@ DEFAULT_PKG=main
 # ROOT: 总是正确指向build脚本所在目录
 _ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
 
+UNAME=$(uname)
+
+hash() {
+    if [ $UNAME = "Darwin" ]; then
+        shasum $*
+    else
+        sha1sum $*
+    fi
+}
+
 # 支持软连接的方式调用此脚本 (软连接的判断需要移除目录部分)，自动编译并执行
 # 软连接的文件名称即为待编译的包名称 (或预定义的项目名称)
 # 如果有多个main包可以编译，简单的做多个软连接即可
@@ -81,7 +91,7 @@ __env() {
 
     VERSION="$(head -n1 "$PJROOT/version" 2>/dev/null)"
     GO_VERSION="$($GO version)"
-    BUILD_RAND="$(head -c 128 /dev/urandom | shasum | cut -d' ' -f1)"
+    BUILD_RAND="$(head -c 128 /dev/urandom | hash | cut -d' ' -f1)"
     BUILD_TIME="$(date +%s)"
 
     if which git 2>/dev/null > /dev/null && git status 2>/dev/null >/dev/null; then
@@ -90,9 +100,9 @@ __env() {
         GIT_HASH="$(git log -n1 --pretty=format:%H-%at 2>/dev/null)"
         GIT_NUMBER="$(git log --oneline 2>/dev/null | wc -l | awk '{print $1}')"
         GIT_STATUS_NUMBER="$(git status -s -uall 2>/dev/null | wc -l | awk '{print $1}')"
-        GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | shasum | cut -d' ' -f1)"
+        GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | hash | cut -d' ' -f1)"
 
-        BUILD_INDICATOR="$(echo -n -e "$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | shasum | cut -d' ' -f1)"
+        BUILD_INDICATOR="$(echo -n -e "$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | hash | cut -d' ' -f1)"
     fi
 }
 __env
