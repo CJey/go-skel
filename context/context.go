@@ -1,7 +1,7 @@
 package context
 
 import (
-	goContext "context"
+	gcontext "context"
 	"encoding/hex"
 	"fmt"
 	"reflect"
@@ -13,14 +13,14 @@ import (
 	"go.uber.org/zap"
 )
 
-type CancelFunc goContext.CancelFunc
+type CancelFunc gcontext.CancelFunc
 
 // context的本意是希望可以参考golang官方context包
 // 并能额外提供一些更加便捷的操作方式
 type Context struct {
 	sync.RWMutex
 
-	ctx    goContext.Context
+	ctx    gcontext.Context
 	parent *Context
 	name   string
 	where  string
@@ -33,7 +33,7 @@ type Context struct {
 }
 
 var (
-	_ goContext.Context = &Context{}
+	_ gcontext.Context = &Context{}
 
 	bootid  string = uuid.NewV4().String()
 	counter uint64 = 0
@@ -48,8 +48,7 @@ func BootID(id string) {
 	bootid = u.String()
 }
 
-// New创建一个新的随机名称Context，当前位置at可选
-func New(at ...string) *Context {
+func Session(ctx gcontext.Context, at ...string) *Context {
 	seq := atomic.AddUint64(&counter, 1)
 	var b = []byte{
 		byte(seq >> 40),
@@ -61,11 +60,14 @@ func New(at ...string) *Context {
 	}
 	var buf = make([]byte, 2*len(b))
 	hex.Encode(buf, b)
-	return NewWithName(bootid[:24]+string(buf), at...)
+	return New(ctx, bootid[:24]+string(buf), at...)
 }
 
-// NewWithName创建一个指定名称的Context，当前位置at可选
-func NewWithName(name string, at ...string) *Context {
+func Background(name string, at ...string) *Context {
+	return New(gcontext.Background(), name, at...)
+}
+
+func New(ctx gcontext.Context, name string, at ...string) *Context {
 	var t uint64 = 0
 	var w string
 	if len(at) > 0 && at[0] != "" {
@@ -73,7 +75,7 @@ func NewWithName(name string, at ...string) *Context {
 	}
 	logger := zap.S().Named(name)
 	c := &Context{
-		ctx:    goContext.Background(),
+		ctx:    ctx,
 		parent: nil,
 		name:   name,
 		where:  w,
@@ -157,34 +159,49 @@ func (c *Context) Session() string {
 	return c.name
 }
 
-func (c *Context) WithCancel() (*Context, CancelFunc) {
+func (c *Context) WithCancelF() (*Context, CancelFunc) {
 	shadow := c.shadow()
 
 	// 保留name，应用新ctx
-	ctx, f := goContext.WithCancel(shadow.ctx)
+	ctx, f := gcontext.WithCancel(shadow.ctx)
 	shadow.ctx = ctx
 
 	return shadow, CancelFunc(f)
 }
 
-func (c *Context) WithDeadline(d time.Time) (*Context, CancelFunc) {
+func (c *Context) WithCancel() *Context {
+	shadow, _ := c.WithCancelF()
+	return shadow
+}
+
+func (c *Context) WithDeadlineF(d time.Time) (*Context, CancelFunc) {
 	shadow := c.shadow()
 
 	// 保留name，应用新ctx
-	ctx, f := goContext.WithDeadline(shadow.ctx, d)
+	ctx, f := gcontext.WithDeadline(shadow.ctx, d)
 	shadow.ctx = ctx
 
 	return shadow, CancelFunc(f)
 }
 
-func (c *Context) WithTimeout(timeout time.Duration) (*Context, CancelFunc) {
+func (c *Context) WithDeadline(d time.Time) *Context {
+	shadow, _ := c.WithDeadlineF(d)
+	return shadow
+}
+
+func (c *Context) WithTimeoutF(timeout time.Duration) (*Context, CancelFunc) {
 	shadow := c.shadow()
 
 	// 保留session，应用新ctx
-	ctx, f := goContext.WithTimeout(shadow.ctx, timeout)
+	ctx, f := gcontext.WithTimeout(shadow.ctx, timeout)
 	shadow.ctx = ctx
 
 	return shadow, CancelFunc(f)
+}
+
+func (c *Context) WithTimeout(timeout time.Duration) *Context {
+	shadow, _ := c.WithTimeoutF(timeout)
+	return shadow
 }
 
 func (c *Context) Deadline() (deadline time.Time, ok bool) {
