@@ -1,7 +1,7 @@
 package main
 
 import (
-	"{=APPNAME=}/cmd"
+	"go-skel/cmd"
 )
 
 func main() {

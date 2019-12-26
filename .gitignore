@@ -1,7 +1,10 @@
 .*.swp
 *~
 .*~
+*.toml
 *.log
+*.gz
+*.tgz
 /bin
 /logs
 /tmp

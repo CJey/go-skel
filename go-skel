@@ -1,0 +1,16 @@
+#! /bin/sh
+
+# _ROOT: 工作目录
+# ROOT: 总是正确指向自身所在目录
+_ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
+
+APPNAME="$(basename "$0")"
+
+export MAINFILE="$ROOT/main.go"
+export TARGET="$ROOT/bin/$APPNAME"
+
+# disable optimization, useful for dlv debugging
+export GCOPTIONS="all=-N -l"
+
+# build && run
+"$ROOT/build" "$APPNAME" "$TARGET" && "$TARGET" $*

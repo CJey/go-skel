@@ -18,20 +18,20 @@ Go skeleton，copy本项目后，请在项目根目录执行`./init <app name>`�
     * 日志文件默认使用TOML格式
     * 将日志文件内部的参数进行半自动绑定
 * 版本号方面
-    * go在编译时，自动提取git信息，并注入到内建的build包中
+    * go在编译时，自动提取git信息，并注入到内建的app包中
     * 用于解决数字版本号不能准确反应代码变更的问题
     * 以及自动化的附着和变更版本号
 * 编译和开发方面
     * 由于go的编译速度较快，因此可以方便的做到代码变更后快速重新编译重新运行
-    * 为了让编译出的程序可以更快速的被执行，被调试，只需将main package的名称`<appname>`在项目根目录下软连接到`utils/build`上
-    * 日常开发时，代码变更保存后，直接执行项目根目录下的app软链`./<appname>`就能自动编译运行
+    * 为了让编译出的程序可以更快速的被执行，被调试，`build`脚本默认会做工作目录脏检查，没有变更则不会重复编译
+    * 日常开发时，代码变更保存后，直接执行项目根目录下的app快捷脚本`./<appname>`就能自动编译运行
 
 ## 开发
 
 ### 环境依赖
 
 * gcc
-* golang >= 1.11
+* golang >= 1.13
 * 科学网络，顺畅下载依赖包
 
 ### 开发调试
@@ -43,23 +43,20 @@ Go skeleton，copy本项目后，请在项目根目录执行`./init <app name>`�
 例.
 
 ``` shell
-./{=APPNAME=} version
+AppName     {=APPNAME=}
+Version     0.0.1-14
 
-# 输出
-Appname      {=APPNAME=}
-Version      0.0.0
+GitTrace    20.c2ccc32+35.c050846
+GitBranch   master
+GitRepo     git@github.com:CJey/{=APPNAME=}.git
+GitHash     c2ccc323b693ca1964c1833f7777e26f5a17249e @ 2019-10-15 17:03:33
 
-GitTrace     5.8df6caf
-GitBranch    master
-GitHash      8df6caffcf4197aed825c3cc39ec4e66e79162da @ 2018-11-15 22:03:52
-GitRepo      git@github.com:CJey/go-skel.git
-
-BuildHash    9b50ee3834e43d79ebd20d17644c4a24ffe161a4
-BuildInfo    go-1.11.2-linux/amd64 @ 2018-11-15 22:04:02
+Golang      1.13.5 linux/amd64
+BuildInfo   5091df5482ef2e311a562fd062e282e14af0dba9 @ 2019-12-26 16:45:06
 ```
 
 ### 编译
 
 ``` shell
-./utils/build {=APPNAME=}
+make
 ```

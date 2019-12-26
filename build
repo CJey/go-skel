@@ -1,0 +1,153 @@
+#! /bin/sh
+
+# _ROOT: 工作目录
+# ROOT: 总是正确指向build脚本所在目录
+_ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
+PJROOT="$ROOT"
+
+if [ -n "$1" ]; then
+    APPNAME="$1"
+fi
+if [ -n "$2" ]; then
+    if [ "$(echo "$2" | head -c1)" = "/" ]; then
+        TARGET="$2"
+    else
+        TARGET="$_ROOT/$2"
+    fi
+fi
+
+UNAME="$(uname)"
+hash() {
+    if [ "$UNAME" = "Darwin" ]; then
+        shasum $*
+    else
+        sha1sum $*
+    fi
+}
+
+# 检查golang环境
+__check() {
+    GO_DEFAULT=/usr/local/go/bin/go
+    GO=go
+
+    if ! which $GO >/dev/null ; then
+        if [ -x $GO_DEFAULT ]; then
+            GO=$GO_DEFAULT
+        else
+            echo "[Error] go environment not found" >&2
+            exit 1
+        fi
+    fi
+
+    if $GO mod 2>&1 | grep -q -i 'unknown command'; then
+        echo "[Error] low golang version(should be >=1.11), do not support go mod command"
+        exit 1
+    fi
+
+    if [ ! -r $PJROOT/go.mod ]; then
+        echo "[Error] go.mod not found or not readable"
+        exit 1
+    fi
+
+    MODULE="$(cat $PJROOT/go.mod | grep ^module | head -n1 | awk '{print $NF}')"
+}
+__check
+
+# 搜集待注入的编译环境信息
+__env() {
+    cd "$PJROOT"
+
+    VERSION="$(head -n1 "$PJROOT/version" 2>/dev/null)"
+    RELEASE=1
+    GO_VERSION="$($GO version)"
+    BUILD_ID="$(head -c 128 /dev/urandom | hash | cut -d' ' -f1)"
+    BUILD_TIME="$(date +%s.%N)"
+
+    if which git 2>/dev/null > /dev/null && git status 2>/dev/null >/dev/null; then
+        VERSION_HASH="$(git log -n1 --pretty=format:%H "$PJROOT/version" 2>/dev/null)"
+        VERSION_REV="$(git rev-list --count HEAD ^$VERSION_HASH 2>/dev/null)"
+        [ -n "$VERSION_REV" ] && RELEASE="$((RELEASE+VERSION_REV))"
+        _upstream="$(git rev-parse --abbrev-ref @{upstream} 2>/dev/null | cut -d/ -f1)"
+        [ -z "$GIT_UPSTREAM" ] && _upstream="origin"
+        GIT_TAG="$(git describe --tags --exact-match 2>/dev/null)"
+        GIT_REPO="$(git config --get remote.$_upstream.url 2>/dev/null)"
+        GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+        GIT_HASH="$(git log -n1 --pretty=format:%H 2>/dev/null)"
+        GIT_TIME="$(git log -n1 --pretty=format:%at 2>/dev/null)"
+        GIT_NUMBER="$(git rev-list --count HEAD 2>/dev/null)"
+        GIT_STATUS_NUMBER="$(git status -s -uall 2>/dev/null | wc -l | awk '{print $1}')"
+        GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | hash | cut -d' ' -f1)"
+
+        BUILD_MAGIC="$(echo -n -e "$GIT_TAG\x00$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_TIME\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | hash | cut -d' ' -f1)"
+    fi
+}
+__env
+
+# also, cross compile with env GOOS & GOARCH
+if [ -z "$APPNAME" -o "$APPNAME" = "help" ]; then
+    echo "Usage: $0 {app name} [target file]"
+    echo "e.g. $0 $MODULE"
+    exit 1
+fi
+
+if [ "$APPNAME" = "env" ]; then
+    echo "MODULE=$MODULE"
+    echo "VERSION=$VERSION"
+    echo "RELEASE=$RELEASE"
+    echo
+    echo "GIT_TAG=$GIT_TAG"
+    echo "GIT_REPO=$GIT_REPO"
+    echo "GIT_BRANCH=$GIT_BRANCH"
+    echo "GIT_HASH=$GIT_HASH"
+    echo "GIT_TIME=$GIT_TIME"
+    echo "GIT_NUMBER=$GIT_NUMBER"
+    echo "GIT_STATUS_NUMBER=$GIT_STATUS_NUMBER"
+    echo "GIT_STATUS_HASH=$GIT_STATUS_HASH"
+    echo
+    echo "GO_VERSION=$GO_VERSION"
+    echo "BUILD_ID=$BUILD_ID"
+    echo "BUILD_TIME=$BUILD_TIME"
+    echo "BUILD_MAGIC=$BUILD_MAGIC"
+    echo "BUILD_ROOT=$PJROOT"
+    exit
+fi
+
+# 编译，使用go mod做包管理
+__build() {
+    cd "$PJROOT"
+
+    $GO build -o "$TARGET" -gcflags="$GCOPTIONS" -ldflags "\
+        $LDOPTIONS \
+        -X '$MODULE/app.appname=$APPNAME' \
+        -X '$MODULE/app.version=$VERSION' \
+        -X '$MODULE/app.release=$RELEASE' \
+        -X '$MODULE/app.goVersion=$GO_VERSION' \
+        -X '$MODULE/app.projectRoot=$PJROOT' \
+        -X '$MODULE/app.gitTag=$GIT_TAG' \
+        -X '$MODULE/app.gitRepo=$GIT_REPO' \
+        -X '$MODULE/app.gitBranch=$GIT_BRANCH' \
+        -X '$MODULE/app.gitHash=$GIT_HASH' \
+        -X '$MODULE/app.gitTime=$GIT_TIME' \
+        -X '$MODULE/app.gitNumber=$GIT_NUMBER' \
+        -X '$MODULE/app.gitStatusNumber=$GIT_STATUS_NUMBER' \
+        -X '$MODULE/app.gitStatusHash=$GIT_STATUS_HASH' \
+        -X '$MODULE/app.buildID=$BUILD_ID' \
+        -X '$MODULE/app.buildMagic=$BUILD_MAGIC' \
+        -X '$MODULE/app.buildTime=$BUILD_TIME'" $MAINFILE
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+}
+
+if [ -z "$MAINFILE" ]; then
+    if [ "$APPNAME" = "$MODULE" ]; then
+        MAINFILE="$PJROOT/main.go"
+    else
+        MAINFILE="$PJROOT/tools/$APPNAME.go"
+    fi
+fi
+[ -z "$TARGET" ] && TARGET="$PJROOT/bin/$APPNAME"
+if [ ! -x "$TARGET" ] || ! grep -q "$BUILD_MAGIC" "$TARGET" 2>/dev/null; then
+    __build
+fi
