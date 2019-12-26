@@ -2,9 +2,8 @@ package context
 
 import (
 	gcontext "context"
-	"encoding/hex"
-	"fmt"
 	"reflect"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -49,18 +48,10 @@ func BootID(id string) {
 }
 
 func Session(ctx gcontext.Context, at ...string) *Context {
+	const h = "000000000000"
 	seq := atomic.AddUint64(&counter, 1)
-	var b = []byte{
-		byte(seq >> 40),
-		byte(seq >> 32),
-		byte(seq >> 24),
-		byte(seq >> 16),
-		byte(seq >> 8),
-		byte(seq),
-	}
-	var buf = make([]byte, 2*len(b))
-	hex.Encode(buf, b)
-	return New(ctx, bootid[:24]+string(buf), at...)
+	a := strconv.Itoa(int(seq))
+	return New(ctx, bootid[:24]+h[:12-len(a)]+a, at...)
 }
 
 func Background(name string, at ...string) *Context {
@@ -125,7 +116,7 @@ func (c *Context) New(at ...string) *Context {
 	seq := atomic.AddUint64(shadow.track, 1)
 	var t uint64 = 0
 
-	shadow.logger = shadow.logger.Named(fmt.Sprintf("%d", seq))
+	shadow.logger = shadow.logger.Named(strconv.Itoa(int(seq)))
 	shadow.L = shadow.logger
 	if shadow.where != "" {
 		shadow.L = shadow.L.With("@", shadow.where)

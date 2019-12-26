@@ -1,6 +1,7 @@
 package context
 
 import (
+	gcontext "context"
 	"fmt"
 	"testing"
 	"time"
@@ -16,7 +17,7 @@ func init() {
 
 func TestContext(t *testing.T) {
 	{
-		ctx := New()
+		ctx := Session(gcontext.Background())
 		ctx.L.Infow("hello", "name", "CJey")
 		ctx1 := ctx.New()
 		ctx1.L.Infow("hello", "name", "CJey")
@@ -27,9 +28,8 @@ func TestContext(t *testing.T) {
 		ctx22 := ctx2.New()
 		ctx22.L.Infow("hello", "name", "CJey")
 
-		ctx22a, cf := ctx22.WithTimeout(time.Second)
+		ctx22a := ctx22.WithTimeout(time.Second)
 		ctx22a.L.Infow("hello", "name", "CJey")
-		cf()
 
 		ctx22b := ctx22.At("lname")
 		ctx22b.L.Infow("hello", "name", "CJey")
@@ -38,7 +38,7 @@ func TestContext(t *testing.T) {
 		ctx22ba.L.Infow("hello", "name", "CJey")
 	}
 	{
-		ctx := New()
+		ctx := Session(gcontext.Background())
 		ctx.L.Infow("hello", "name", "CJey")
 		ctx1 := ctx.New()
 		ctx1.L.Infow("hello", "name", "CJey")
@@ -49,9 +49,8 @@ func TestContext(t *testing.T) {
 		ctx22 := ctx2.New()
 		ctx22.L.Infow("hello", "name", "CJey")
 
-		ctx22a, cf := ctx22.WithTimeout(time.Second)
+		ctx22a := ctx22.WithTimeout(time.Second)
 		ctx22a.L.Infow("hello", "name", "CJey")
-		cf()
 
 		ctx22b := ctx22.At("lname")
 		ctx22b.L.Infow("hello", "name", "CJey")
