@@ -19,12 +19,13 @@ var cmdFoo = &cobra.Command{
 }
 
 func init() {
-	supportConfigAndLogger(cmdFoo)
+	cmd := cmdFoo
+	supportConfigAndLogger(cmd)
 
-	cmdFoo.PersistentFlags().String("hello", "world!", "for testing")
-	viper.BindPFlag("hello", cmdFoo.PersistentFlags().Lookup("hello"))
+	cmd.PersistentFlags().String("hello", "world!", "for testing")
+	viper.BindPFlag("hello", cmd.PersistentFlags().Lookup("hello"))
 
-	//cmdRoot.AddCommand(cmdFoo)
+	//cmdRoot.AddCommand(cmd)
 }
 
 func runFoo(cmd *cobra.Command, args []string) {

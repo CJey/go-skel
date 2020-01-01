@@ -17,7 +17,7 @@ func init() {
 
 func TestContext(t *testing.T) {
 	{
-		ctx := Session(gcontext.Background())
+		ctx := New(gcontext.Background())
 		ctx.L.Infow("hello", "name", "CJey")
 		ctx1 := ctx.New()
 		ctx1.L.Infow("hello", "name", "CJey")
@@ -38,7 +38,7 @@ func TestContext(t *testing.T) {
 		ctx22ba.L.Infow("hello", "name", "CJey")
 	}
 	{
-		ctx := Session(gcontext.Background())
+		ctx := New(gcontext.Background())
 		ctx.L.Infow("hello", "name", "CJey")
 		ctx1 := ctx.New()
 		ctx1.L.Infow("hello", "name", "CJey")

@@ -31,7 +31,9 @@ gitStatusHash: 7 chars at the hash code's head which indicate different
 }
 
 func init() {
-	cmdRoot.AddCommand(cmdVersion)
+	cmd := cmdVersion
+
+	cmdRoot.AddCommand(cmd)
 }
 
 func runVersion(cmd *cobra.Command, args []string) {
