@@ -154,8 +154,14 @@ func (c *Context) Name() string {
 	return c.name
 }
 
-func (c *Context) Session() string {
-	return c.name
+func (c *Context) Session(s ...string) string {
+	if len(s) > 0 {
+		c.session = s[0]
+	}
+	if c.session == "" {
+		return c.name
+	}
+	return c.session
 }
 
 func (c *Context) WithCancelF() (*Context, CancelFunc) {
