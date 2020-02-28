@@ -31,6 +31,8 @@ func supportConfig(cmd *cobra.Command) {
 		"configuration file path")
 }
 func handleConfig(cmd *cobra.Command) {
+	viper.BindPFlag("config", cmd.Flags().Lookup("config"))
+
 	fpath, err := cmd.Flags().GetString("config")
 	if err != nil {
 		panic(err)
@@ -57,7 +59,7 @@ func handleConfig(cmd *cobra.Command) {
 }
 
 func supportLogger(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("log-level", "info",
+	cmd.PersistentFlags().String("log-level", "debug",
 		"set log level, support [debug, info, warn, error, panic, fatal]")
 	cmd.PersistentFlags().String("log-file", "stderr",
 		"log file path, support stderr, stdout, or other valid file path")

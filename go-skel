@@ -5,10 +5,9 @@
 _ROOT="$(pwd)" && cd "$(dirname "$0")" && ROOT="$(pwd)"
 
 APPNAME="$(basename "$0")"
+TARGET="$ROOT/bin/$APPNAME"
 
 export MAINFILE="$ROOT/main.go"
-export TARGET="$ROOT/bin/$APPNAME"
-
 # disable optimization, useful for dlv debugging
 export GCOPTIONS="all=-N -l"
 

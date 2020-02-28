@@ -1,10 +1,13 @@
 .*.swp
+.*.swo
 *~
 .*~
 *.toml
 *.log
 *.gz
 *.tgz
+*.rpm
 /bin
 /logs
 /tmp
+/_rpmbuild

@@ -6,6 +6,7 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"go-skel/app"
 )
@@ -33,16 +34,37 @@ gitStatusHash: 7 chars at the hash code's head which indicate different
 func init() {
 	cmd := cmdVersion
 
+	cmd.PersistentFlags().Bool("tag", false, "Show info about git tag")
+
+	viper.BindPFlag("tag", cmd.PersistentFlags().Lookup("tag"))
+
 	cmdRoot.AddCommand(cmd)
 }
 
 func runVersion(cmd *cobra.Command, args []string) {
-	var tpl *template.Template = template.Must(template.New("info").Parse(`
-{{/* */}}AppName     {{.Name}}
+	var tpl *template.Template
+	if viper.GetBool("tag") {
+		if app.App().Git.TagName == "" {
+			return
+		}
+		tpl = template.Must(template.New("info").Parse(`
+AppName     {{.Name}}
+TagName     {{.Git.TagName}}
+{{if .Git.TagTrace}}
+TagTrace    {{.Git.TagTrace}}{{if .Git.Branch}}
+GitBranch   {{.Git.Branch}}{{end}}{{if .Git.Repo}}
+GitRepo     {{.Git.Repo}}{{end}}
+TagHash     {{.Git.TagHash}} @ {{.Git.TagTimeString}}{{end}}
+---
+
+{{.Git.TagMessage}}
+`))
+	} else {
+		tpl = template.Must(template.New("info").Parse(`
+AppName     {{.Name}}
 Version     {{.Version}}-{{.Release}}
 {{if .Git.Trace}}
-GitTrace    {{.Git.Trace}}{{if .Git.Tag}}
-GitTag      {{.Git.Tag}}{{end}}{{if .Git.Branch}}
+GitTrace    {{.Git.Trace}}{{if .Git.Branch}}
 GitBranch   {{.Git.Branch}}{{end}}{{if .Git.Repo}}
 GitRepo     {{.Git.Repo}}{{end}}
 GitHash     {{.Git.CommitHash}} @ {{.Git.CommitTimeString}}
@@ -50,6 +72,7 @@ GitHash     {{.Git.CommitHash}} @ {{.Git.CommitTimeString}}
 Golang      {{.Go.Version}} {{.Go.Arch}}
 BuildInfo   {{.Build.ID}} @ {{.Build.TimeString}}
 `))
+	}
 
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, app.App()); err != nil {

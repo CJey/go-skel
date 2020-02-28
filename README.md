@@ -31,28 +31,28 @@ Go skeleton，copy本项目后，请在项目根目录执行`./init <app name>`�
 ### 环境依赖
 
 * gcc
-* golang >= 1.13
+* golang >= 1.14
 * 科学网络，顺畅下载依赖包
 
 ### 开发调试
 
 ``` shell
-./{=APPNAME=}
+./go-skel
 ```
 
 例.
 
 ``` shell
-AppName     {=APPNAME=}
-Version     0.0.1-14
+AppName     go-skel
+Version     0.0.1-1
 
-GitTrace    20.c2ccc32+35.c050846
+GitTrace    1.96c1643
 GitBranch   master
-GitRepo     git@github.com:CJey/{=APPNAME=}.git
-GitHash     c2ccc323b693ca1964c1833f7777e26f5a17249e @ 2019-10-15 17:03:33
+GitRepo     git@github.com:CJey/go-skel.git
+GitHash     96c16432d1da8012b99f1cdcddb42135c7a2f7a7 @ 2020-01-01 15:43:37
 
-Golang      1.13.5 linux/amd64
-BuildInfo   5091df5482ef2e311a562fd062e282e14af0dba9 @ 2019-12-26 16:45:06
+Golang      1.14 linux/amd64
+BuildInfo   c8ff0b3e3a358617eb7fd12c9787ee1f4d418315 @ 2020-02-28 17:18:10
 ```
 
 ### 编译

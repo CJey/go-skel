@@ -29,7 +29,8 @@ type Context struct {
 	session string
 	// 串联所有的at，表明自身当前所处的具名位置
 	// 在zap的日志中出现在名为@的field中
-	where  string
+	where string
+	// always original logger
 	logger *zap.SugaredLogger
 
 	track  *uint64
@@ -72,7 +73,7 @@ func Named(ctx gcontext.Context, name string, at ...string) *Context {
 	if len(at) > 0 && at[0] != "" {
 		w = at[0]
 	}
-	logger := zap.S().Named(name)
+	logger := zap.S()
 	c := &Context{
 		ctx:    ctx,
 		parent: nil,
@@ -85,6 +86,8 @@ func Named(ctx gcontext.Context, name string, at ...string) *Context {
 
 		L: logger,
 	}
+
+	c.L = c.logger.Named(c.name)
 	if c.where != "" {
 		c.L = c.L.With("@", c.where)
 	}
@@ -96,11 +99,12 @@ func (c *Context) shadow() *Context {
 	return &Context{
 		L: c.L,
 
-		ctx:    c.ctx,
-		parent: c,
-		name:   c.name,
-		where:  c.where,
-		logger: c.logger,
+		ctx:     c.ctx,
+		parent:  c,
+		name:    c.name,
+		session: c.session,
+		where:   c.where,
+		logger:  c.logger,
 
 		track:  c.track,
 		values: map[interface{}]interface{}{},
@@ -110,7 +114,20 @@ func (c *Context) shadow() *Context {
 // Context派生子Context，用于并发派生新goroutine的场景
 // 比如内部api基本上都采用了并发调用的方式，需要一个额外的追踪标记来标明日志的从属请求
 func (c *Context) New(at ...string) *Context {
+	var t uint64 = 0
 	shadow := c.shadow()
+	shadow.track = &t
+
+	// 保留ctx，应用新name
+	seq := atomic.AddUint64(c.track, 1)
+	if shadow.name == "" {
+		shadow.name = strconv.Itoa(int(seq))
+	} else {
+		shadow.name += "." + strconv.Itoa(int(seq))
+	}
+	if shadow.session != "" {
+		shadow.session += "." + strconv.Itoa(int(seq))
+	}
 
 	if len(at) > 0 && at[0] != "" {
 		if shadow.where == "" {
@@ -120,16 +137,10 @@ func (c *Context) New(at ...string) *Context {
 		}
 	}
 
-	// 保留ctx，应用新name
-	seq := atomic.AddUint64(shadow.track, 1)
-	var t uint64 = 0
-
-	shadow.logger = shadow.logger.Named(strconv.Itoa(int(seq)))
-	shadow.L = shadow.logger
+	shadow.L = shadow.logger.Named(shadow.name)
 	if shadow.where != "" {
 		shadow.L = shadow.L.With("@", shadow.where)
 	}
-	shadow.track = &t
 
 	return shadow
 }
@@ -137,6 +148,7 @@ func (c *Context) New(at ...string) *Context {
 // 用于标记当前位置，或者传达调用路径时使用
 func (c *Context) At(at string) *Context {
 	shadow := c.shadow()
+
 	if at != "" {
 		if shadow.where == "" {
 			shadow.where = at
@@ -144,8 +156,10 @@ func (c *Context) At(at string) *Context {
 			shadow.where += "." + at
 		}
 	}
+
+	shadow.L = shadow.logger.Named(shadow.name)
 	if shadow.where != "" {
-		shadow.L = shadow.logger.With("@", shadow.where)
+		shadow.L = shadow.L.With("@", shadow.where)
 	}
 	return shadow
 }
@@ -158,13 +172,15 @@ func (c *Context) Session(s ...string) string {
 	if len(s) > 0 {
 		c.session = s[0]
 	}
+
 	if c.session == "" {
 		return c.name
 	}
+
 	return c.session
 }
 
-func (c *Context) WithCancelF() (*Context, CancelFunc) {
+func (c *Context) WithCancel() (*Context, CancelFunc) {
 	shadow := c.shadow()
 
 	// 保留name，应用新ctx
@@ -172,11 +188,6 @@ func (c *Context) WithCancelF() (*Context, CancelFunc) {
 	shadow.ctx = ctx
 
 	return shadow, CancelFunc(f)
-}
-
-func (c *Context) WithCancel() *Context {
-	shadow, _ := c.WithCancelF()
-	return shadow
 }
 
 func (c *Context) WithDeadlineF(d time.Time) (*Context, CancelFunc) {

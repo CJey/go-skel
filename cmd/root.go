@@ -32,7 +32,7 @@ func commandInitializer() {
 	rand.Seed(app.BootTime.UnixNano())
 
 	// initialize default logger
-	setLogger("info", "stderr", "console", false)
+	setLogger("debug", "stderr", "console", false)
 
 	// initialize context
 	context.BootID(app.BootID)

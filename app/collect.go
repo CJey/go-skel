@@ -12,10 +12,9 @@ import (
 // e.g. go build -X "go-skel/app.version=0.0.1" ...
 var (
 	appname string = "myapp"
-	version string = "0.0.0"
-	release string = "0"
+	version string = "0.0.1"
+	release string = "1"
 
-	gitTag          string
 	gitRepo         string
 	gitBranch       string
 	gitHash         string
@@ -23,6 +22,13 @@ var (
 	gitNumber       string
 	gitStatusNumber string
 	gitStatusHash   string
+
+	tagName    string
+	tagHash    string
+	tagTime    string
+	tagNumber  string
+	tagDiff    string
+	tagMessage string
 
 	buildID     string
 	buildTime   string
@@ -45,7 +51,6 @@ func collectInfo(app *Application) {
 
 	// git
 	git := &app.Git
-	git.Tag = gitTag
 	git.Repo = gitRepo
 	if gitBranch != "HEAD" { // HEAD意味着当前并不处于某个具名的分支上，但不排除正处于某个tag上
 		git.Branch = gitBranch
@@ -57,13 +62,22 @@ func collectInfo(app *Application) {
 	git.CommitTimeString = git.CommitTime.Format(tf)
 	git.CommitTrace = beTrace(git.CommitNumber, git.CommitHash)
 
+	git.TagName = tagName
+	git.TagHash = tagHash
+	git.TagNumber = beUint(tagNumber)
+	git.TagTime = beTime(tagTime)
+	git.TagTimeString = git.TagTime.Format(tf)
+	git.TagTrace = beTrace(git.TagNumber, git.TagHash)
+	git.TagDiff = beUint(tagDiff)
+	git.TagMessage = tagMessage
+
 	git.StatusHash = gitStatusHash
 	git.StatusNumber = beUint(gitStatusNumber)
 	git.StatusTrace = beTrace(git.StatusNumber, git.StatusHash)
 
 	git.Trace = git.CommitTrace
 	if len(git.Trace) > 0 && len(git.StatusTrace) > 0 {
-		git.Trace += "+" + git.StatusTrace
+		git.Trace += " + " + git.StatusTrace
 	}
 
 	// golang

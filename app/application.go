@@ -16,7 +16,6 @@ type Application struct {
 	}
 
 	Git struct {
-		Tag    string // 编译时所在commit的tag名称，可能为空
 		Repo   string // 编译分支所track的upstream地址
 		Branch string // 编译的分支名称，如果为HEAD，则会被置空
 		// 结合CommitTrace和StatusTrace生成的唯一标记
@@ -29,6 +28,15 @@ type Application struct {
 		CommitTime       time.Time // 编译时所在commit的生成时间
 		CommitTimeString string    // 时间的快捷字符串标记，方便template引用
 		CommitTrace      string    // 结合number和hash生成的一组标记，标记此commit的唯一性
+
+		TagName       string // 编译时git describe计算得到的tag名称，可能为空
+		TagHash       string
+		TagNumber     uint
+		TagTime       time.Time
+		TagTimeString string
+		TagTrace      string
+		TagDiff       uint // 此tag距离当前的commit相距几个commit
+		TagMessage    string
 
 		// 编译时，工作目录可能并不干净，尤其是开发者在开发过程中
 		// 做的临时编译结果，因此，需要一定的手段来帮助标记此情况

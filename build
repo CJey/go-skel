@@ -57,28 +57,41 @@ __check
 __env() {
     cd "$PJROOT"
 
-    VERSION="$(head -n1 "$PJROOT/version" 2>/dev/null)"
-    RELEASE=1
+    VERSION="0.0.1"
+    RELEASE="1"
     GO_VERSION="$($GO version)"
     BUILD_ID="$(head -c 128 /dev/urandom | hash | cut -d' ' -f1)"
     BUILD_TIME="$(date +%s.%N)"
 
     if which git 2>/dev/null > /dev/null && git status 2>/dev/null >/dev/null; then
-        VERSION_HASH="$(git log -n1 --pretty=format:%H "$PJROOT/version" 2>/dev/null)"
-        VERSION_REV="$(git rev-list --count HEAD ^$VERSION_HASH 2>/dev/null)"
-        [ -n "$VERSION_REV" ] && RELEASE="$((RELEASE+VERSION_REV))"
         _upstream="$(git rev-parse --abbrev-ref @{upstream} 2>/dev/null | cut -d/ -f1)"
         [ -z "$GIT_UPSTREAM" ] && _upstream="origin"
-        GIT_TAG="$(git describe --tags --exact-match 2>/dev/null)"
         GIT_REPO="$(git config --get remote.$_upstream.url 2>/dev/null)"
         GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+
+        # current commit info
         GIT_HASH="$(git log -n1 --pretty=format:%H 2>/dev/null)"
         GIT_TIME="$(git log -n1 --pretty=format:%at 2>/dev/null)"
         GIT_NUMBER="$(git rev-list --count HEAD 2>/dev/null)"
+
+        TAG_NAME="$(git describe --long --match v[0-9]* 2>/dev/null | grep -oP '.*(?=-\d+-g.{7,}$)')"
+        if [ -n "$TAG_NAME" ]; then
+            # tag commit info
+            TAG_HASH="$(git tag -l "$TAG_NAME" --format '%(object)')"
+            TAG_TIME="$(git log -n1 $TAG_HASH --pretty=format:%at)"
+            TAG_NUMBER="$(git rev-list --count $TAG_HASH)"
+
+            TAG_MESSAGE="$(git tag -v "$TAG_NAME" 2>/dev/null | tail -n +6)"
+            TAG_DIFF="$(git rev-list --count HEAD ^$TAG_HASH)"
+
+            VERSION="$(echo $TAG_NAME | cut -c2-)"
+            RELEASE="$((1+TAG_DIFF))"
+        fi
+
         GIT_STATUS_NUMBER="$(git status -s -uall 2>/dev/null | wc -l | awk '{print $1}')"
         GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | hash | cut -d' ' -f1)"
 
-        BUILD_MAGIC="$(echo -n -e "$GIT_TAG\x00$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$GIT_TIME\x00$GIT_NUMBER\x00$GIT_STATUS_NUMBER\x00$GIT_STATUS_HASH" | hash | cut -d' ' -f1)"
+        BUILD_MAGIC="$(echo -n -e "$GIT_REPO\x00$GIT_BRANCH\x00$GIT_HASH\x00$TAG_NAME\x00$TAG_HASH\x00$GIT_STATUS_HASH" | hash | cut -d' ' -f1)"
     fi
 }
 __env
@@ -86,7 +99,7 @@ __env
 # also, cross compile with env GOOS & GOARCH
 if [ -z "$APPNAME" -o "$APPNAME" = "help" ]; then
     echo "Usage: $0 {app name} [target file]"
-    echo "e.g. $0 $MODULE"
+    echo "e.g. $0 $(basename $MODULE)"
     exit 1
 fi
 
@@ -95,7 +108,6 @@ if [ "$APPNAME" = "env" ]; then
     echo "VERSION=$VERSION"
     echo "RELEASE=$RELEASE"
     echo
-    echo "GIT_TAG=$GIT_TAG"
     echo "GIT_REPO=$GIT_REPO"
     echo "GIT_BRANCH=$GIT_BRANCH"
     echo "GIT_HASH=$GIT_HASH"
@@ -109,6 +121,15 @@ if [ "$APPNAME" = "env" ]; then
     echo "BUILD_TIME=$BUILD_TIME"
     echo "BUILD_MAGIC=$BUILD_MAGIC"
     echo "BUILD_ROOT=$PJROOT"
+    if [ -n "$TAG_NAME" ]; then
+        echo
+        echo "TAG_NAME=$TAG_NAME"
+        echo "TAG_HASH=$TAG_HASH"
+        echo "TAG_TIME=$TAG_TIME"
+        echo "TAG_NUMBER=$TAG_NUMBER"
+        echo "TAG_DIFF=$TAG_DIFF"
+        echo "TAG_MESSAGE=$TAG_MESSAGE"
+    fi
     exit
 fi
 
@@ -123,12 +144,17 @@ __build() {
         -X '$MODULE/app.release=$RELEASE' \
         -X '$MODULE/app.goVersion=$GO_VERSION' \
         -X '$MODULE/app.projectRoot=$PJROOT' \
-        -X '$MODULE/app.gitTag=$GIT_TAG' \
         -X '$MODULE/app.gitRepo=$GIT_REPO' \
         -X '$MODULE/app.gitBranch=$GIT_BRANCH' \
         -X '$MODULE/app.gitHash=$GIT_HASH' \
         -X '$MODULE/app.gitTime=$GIT_TIME' \
         -X '$MODULE/app.gitNumber=$GIT_NUMBER' \
+        -X '$MODULE/app.tagName=$TAG_NAME' \
+        -X '$MODULE/app.tagHash=$TAG_HASH' \
+        -X '$MODULE/app.tagTime=$TAG_TIME' \
+        -X '$MODULE/app.tagNumber=$TAG_NUMBER' \
+        -X '$MODULE/app.tagDiff=$TAG_DIFF' \
+        -X '$MODULE/app.tagMessage=$TAG_MESSAGE' \
         -X '$MODULE/app.gitStatusNumber=$GIT_STATUS_NUMBER' \
         -X '$MODULE/app.gitStatusHash=$GIT_STATUS_HASH' \
         -X '$MODULE/app.buildID=$BUILD_ID' \
@@ -141,7 +167,7 @@ __build() {
 }
 
 if [ -z "$MAINFILE" ]; then
-    if [ "$APPNAME" = "$MODULE" ]; then
+    if [ "$APPNAME" = "$(basename $MODULE)" ]; then
         MAINFILE="$PJROOT/main.go"
     else
         MAINFILE="$PJROOT/tools/$APPNAME.go"
