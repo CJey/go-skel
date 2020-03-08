@@ -147,10 +147,15 @@ fi
 __build() {
     cd "$PJROOT"
 
-    GCFLAGS="all='-trimpath=$PJROOT'"
-    ASMFLAGS="all='-trimpath=$PJROOT'"
-    CGO_ENABLED=0 $GO build -o "$TARGET" -asmflags="$ASMFLAGS" -gcflags="$GCFLAGS" -ldflags "\
-        $LDOPTIONS \
+    GCFLAGS="-trimpath=$PJROOT"
+    ASMFLAGS="-trimpath=$PJROOT"
+    if [ -n "$DEVELOP" ]; then
+        GCFLAGS="-N -l $GCFLAGS"
+    else
+        LDFLAGS="-w -s"
+    fi
+    CGO_ENABLED=0 $GO build -asmflags="all=$ASMFLAGS" -gcflags="all=$GCFLAGS" \
+        -o "$TARGET" -ldflags "$LDFLAGS \
         -X '$MODULE/app.appname=$APPNAME' \
         -X '$MODULE/app.version=$VERSION' \
         -X '$MODULE/app.release=$RELEASE' \

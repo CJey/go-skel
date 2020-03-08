@@ -9,7 +9,7 @@ TARGET="$ROOT/bin/$APPNAME"
 
 export MAINFILE="$ROOT/main.go"
 # disable optimization, useful for dlv debugging
-export GCOPTIONS="all=-N -l"
+#export DEVELOP=1
 
 # build && run
 "$ROOT/build" "$APPNAME" "$TARGET" && "$TARGET" $*
