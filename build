@@ -149,7 +149,7 @@ __build() {
 
     GCFLAGS="all='-trimpath=$PJROOT'"
     ASMFLAGS="all='-trimpath=$PJROOT'"
-    $GO build -o "$TARGET" -asmflags="$ASMFLAGS" -gcflags="$GCFLAGS" -ldflags "\
+    CGO_ENABLED=0 $GO build -o "$TARGET" -asmflags="$ASMFLAGS" -gcflags="$GCFLAGS" -ldflags "\
         $LDOPTIONS \
         -X '$MODULE/app.appname=$APPNAME' \
         -X '$MODULE/app.version=$VERSION' \
