@@ -60,6 +60,5 @@ type Application struct {
 		Time       time.Time // 编译时的时间
 		TimeString string    // 时间的快捷字符串标记，方便template引用
 		Magic      string    // 编译工具任意注入的字符串，主要用于在开发过程中由编译工具参考是否需要重新编译
-		Root       string    // 编译时，项目根目录在操作系统上的绝对路径
 	}
 }

@@ -30,11 +30,10 @@ var (
 	tagDiff    string
 	tagMessage string
 
-	buildID     string
-	buildTime   string
-	buildMagic  string
-	goVersion   string
-	projectRoot string
+	buildID    string
+	buildTime  string
+	buildMagic string
+	goVersion  string
 )
 
 // 将编译工具注入的初始值解析处理后，赋值于默认的App之中
@@ -91,6 +90,5 @@ func collectInfo(app *Application) {
 	app.Build.ID = buildID
 	app.Build.Time = beTime(buildTime)
 	app.Build.TimeString = app.Build.Time.Format(tf)
-	app.Build.Root = projectRoot
 	app.Build.Magic = buildMagic
 }

@@ -30,6 +30,7 @@ echo %{version} > version
 MAINFILE="%{pjroot}/main.go" %{pjroot}/build %{name} bin
 
 sed -i 's;${{INSTALL_ROOT}};%{runroot};g' sysvinit logrotate.conf
+sed -i 's;${{APPNAME}};%{name};g' sysvinit logrotate.conf
 sed -i 's;^\(\s*file\s*=\s*"\)stderr\(".*\)$;\1%{runroot}/log/%{name}.log\2;' config.toml
 
 %install

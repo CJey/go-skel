@@ -9,24 +9,29 @@
 # Description:       Enable service provided by daemon.
 ### END INIT INFO
 
+name="${{APPNAME}}"
 dir="${{INSTALL_ROOT}}"
-cfg="$dir/conf/go-skel.toml"
-cmd="$dir/bin/go-skel --config $cfg"
 
-name=`basename $0`
-run_dir="/var/run/$name"
-pid_file="$run_dir/pid"
+bin="$dir/bin/$name"
+cfg="$dir/conf/$name.toml"
+args="--config $cfg"
+cmd="$bin $args"
+
+pid_file="/var/run/$name.pid"
 stdout_log="/var/log/$name.log"
 stderr_log="/var/log/$name.err"
-
-mkdir -p $run_dir
 
 get_pid() {
     cat "$pid_file"
 }
 
 is_running() {
-    [ -f "$pid_file" ] && ps -p `get_pid` > /dev/null 2>&1
+    pid="$(cat "$pid_file" 2>/dev/null)"
+    lstart="$(ps -o lstart --no-heading -p $pid 2>/dev/null)"
+    [ -z "$lstart" ] && return 1
+    lstart="$(date -d "$lstart" +%s)"
+    fchange="$(stat --printf=%Z "$pid_file")"
+    [ "$lstart" -le "$fchange" ]
 }
 
 case "$1" in
