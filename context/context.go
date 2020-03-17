@@ -39,28 +39,25 @@ type Context struct {
 	L *zap.SugaredLogger
 }
 
-var _ gcontext.Context = &Context{}
+var (
+	BootID   = uuid.NewV4().String()
+	BootTime = time.Now()
+)
 
 var (
-	bootid  string = uuid.NewV4().String()
 	counter uint64 = 0
 )
 
-// sync boot uuid
-func BootID(id string) {
-	u, err := uuid.FromString(id)
-	if err != nil {
-		panic(err)
-	}
-	bootid = u.String()
+func New(at ...string) *Context {
+	return NewWith(gcontext.Background(), at...)
 }
 
 // use a uuid as name, with sequantial encoding
-func New(ctx gcontext.Context, at ...string) *Context {
+func NewWith(ctx gcontext.Context, at ...string) *Context {
 	const h = "000000000000"
 	seq := atomic.AddUint64(&counter, 1)
 	a := strconv.Itoa(int(seq))
-	return Named(ctx, bootid[:24]+h[:12-len(a)]+a, at...)
+	return Named(ctx, BootID[:24]+h[:12-len(a)]+a, at...)
 }
 
 func Background(name string, at ...string) *Context {
@@ -190,7 +187,7 @@ func (c *Context) WithCancel() (*Context, CancelFunc) {
 	return shadow, CancelFunc(f)
 }
 
-func (c *Context) WithDeadlineF(d time.Time) (*Context, CancelFunc) {
+func (c *Context) WithDeadline(d time.Time) (*Context, CancelFunc) {
 	shadow := c.shadow()
 
 	// 保留name，应用新ctx
@@ -200,12 +197,7 @@ func (c *Context) WithDeadlineF(d time.Time) (*Context, CancelFunc) {
 	return shadow, CancelFunc(f)
 }
 
-func (c *Context) WithDeadline(d time.Time) *Context {
-	shadow, _ := c.WithDeadlineF(d)
-	return shadow
-}
-
-func (c *Context) WithTimeoutF(timeout time.Duration) (*Context, CancelFunc) {
+func (c *Context) WithTimeout(timeout time.Duration) (*Context, CancelFunc) {
 	shadow := c.shadow()
 
 	// 保留session，应用新ctx
@@ -213,11 +205,6 @@ func (c *Context) WithTimeoutF(timeout time.Duration) (*Context, CancelFunc) {
 	shadow.ctx = ctx
 
 	return shadow, CancelFunc(f)
-}
-
-func (c *Context) WithTimeout(timeout time.Duration) *Context {
-	shadow, _ := c.WithTimeoutF(timeout)
-	return shadow
 }
 
 func (c *Context) WithValue(key, val interface{}) *Context {
@@ -244,6 +231,33 @@ func (c *Context) Err() error {
 
 func (c *Context) Value(key interface{}) interface{} {
 	return c.ctx.Value(key)
+}
+
+func (c *Context) Add(key interface{}, value interface{}) {
+	if key == nil {
+		panic("nil key")
+	}
+	if !reflect.TypeOf(key).Comparable() {
+		panic("key is not comparable")
+	}
+
+	c.Lock()
+	defer c.Unlock()
+	val, ok := c.values[key]
+	if ok {
+		if vals, ok := val.([]interface{}); ok {
+			c.values[key] = append(vals, value)
+			return
+		}
+	}
+	c.values[key] = []interface{}{val}
+}
+
+func (c *Context) GetSlice(key interface{}) []interface{} {
+	if val, ok := c.Get(key); ok {
+		return val.([]interface{})
+	}
+	return nil
 }
 
 func (c *Context) Set(key interface{}, value interface{}) {

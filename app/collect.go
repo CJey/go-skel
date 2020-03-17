@@ -3,9 +3,6 @@ package app
 import (
 	"encoding/base64"
 	"strings"
-	"time"
-
-	"github.com/satori/go.uuid"
 )
 
 // 此处定义的变量，均可能会被编译工具在编译时注入初始值
@@ -44,10 +41,6 @@ func collectInfo(app *Application) {
 	app.Name = appname
 	app.Version = version
 	app.Release = beUint(release)
-
-	// boot
-	app.Boot.ID = uuid.NewV4().String()
-	app.Boot.Time = time.Now()
 
 	// git
 	git := &app.Git

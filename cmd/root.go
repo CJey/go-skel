@@ -29,11 +29,8 @@ func init() {
 
 func commandInitializer() {
 	// initialize random generator
-	rand.Seed(app.BootTime.UnixNano())
+	rand.Seed(context.BootTime.UnixNano())
 
 	// initialize default logger
 	setLogger("debug", "stderr", "console", false)
-
-	// initialize context
-	context.BootID(app.BootID)
 }

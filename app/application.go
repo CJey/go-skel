@@ -10,11 +10,6 @@ type Application struct {
 	Version string // 语义化版本
 	Release uint   // 第几次发布
 
-	Boot struct {
-		ID   string    // 每次启动都会生成一个随机UUID
-		Time time.Time // 启动时间
-	}
-
 	Git struct {
 		Repo   string // 编译分支所track的upstream地址
 		Branch string // 编译的分支名称，如果为HEAD，则会被置空

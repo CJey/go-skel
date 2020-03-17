@@ -17,7 +17,7 @@ func init() {
 
 func TestContext(t *testing.T) {
 	{
-		ctx := Session(gcontext.Background())
+		ctx := NewWith(gcontext.Background())
 		ctx.L.Infow("hello", "name", "CJey")
 		ctx1 := ctx.New()
 		ctx1.L.Infow("hello", "name", "CJey")
@@ -28,7 +28,7 @@ func TestContext(t *testing.T) {
 		ctx22 := ctx2.New()
 		ctx22.L.Infow("hello", "name", "CJey")
 
-		ctx22a := ctx22.WithTimeout(time.Second)
+		ctx22a, _ := ctx22.WithTimeout(time.Second)
 		ctx22a.L.Infow("hello", "name", "CJey")
 
 		ctx22b := ctx22.At("lname")
@@ -38,7 +38,7 @@ func TestContext(t *testing.T) {
 		ctx22ba.L.Infow("hello", "name", "CJey")
 	}
 	{
-		ctx := Session(gcontext.Background())
+		ctx := NewWith(gcontext.Background())
 		ctx.L.Infow("hello", "name", "CJey")
 		ctx1 := ctx.New()
 		ctx1.L.Infow("hello", "name", "CJey")
@@ -49,7 +49,7 @@ func TestContext(t *testing.T) {
 		ctx22 := ctx2.New()
 		ctx22.L.Infow("hello", "name", "CJey")
 
-		ctx22a := ctx22.WithTimeout(time.Second)
+		ctx22a, _ := ctx22.WithTimeout(time.Second)
 		ctx22a.L.Infow("hello", "name", "CJey")
 
 		ctx22b := ctx22.At("lname")

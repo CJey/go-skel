@@ -10,10 +10,6 @@
 */
 package app
 
-import (
-	"time"
-)
-
 var (
 	// 默认的App，所有搜集到的编译环境信息都在其中
 	app Application
@@ -22,9 +18,6 @@ var (
 	Name    string // app.Name
 	Trace   string // app.Git.Trace
 	Version string // app.Version-app.Release
-
-	BootID   string    // app.Boot.ID
-	BootTime time.Time // app.Boot.Time
 )
 
 func init() {
@@ -34,8 +27,6 @@ func init() {
 	Name = app.Name
 	Trace = app.Git.Trace
 	Version = app.Version
-	BootID = app.Boot.ID
-	BootTime = app.Boot.Time
 }
 
 func App() Application {
