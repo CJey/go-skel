@@ -63,9 +63,9 @@ __build_magic() {
         GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
 
         GIT_HASH="$(git log -n1 --pretty=format:%H 2>/dev/null)"
-        TAG_NAME="$(git describe --long --match v[0-9]* 2>/dev/null | sed -nE 's/(.*)-[0-9]+-g.{7,}/\1/p')"
+        TAG_NAME="$(git describe --tags --long --match v[0-9]* 2>/dev/null | sed -nE 's/(.*)-[0-9]+-g.{7,}/\1/p')"
         if [ -n "$TAG_NAME" ]; then
-            TAG_HASH="$(git tag -l "$TAG_NAME" --format '%(object)')"
+            TAG_HASH="$(git rev-list -n1 "$TAG_NAME")"
         fi
 
         GIT_STATUS_HASH="$(git status -s -uall 2>/dev/null | awk '{print $NF}' | xargs -I{} cat "{}" 2>/dev/null | hash | cut -d' ' -f1)"
@@ -92,7 +92,7 @@ __env() {
             TAG_TIME="$(git log -n1 $TAG_HASH --pretty=format:%at)"
             TAG_NUMBER="$(git rev-list --count $TAG_HASH)"
 
-            TAG_MESSAGE="$(git tag -l v[0-9]* -n100 --sort=-v:refname | sed -E 's/^(v[0-9][^ \t]+)[ \t]{6}/\1\
+            TAG_MESSAGE="$(git tag -l v[0-9]* -n100 --sort=-v:refname | sed -n "/^$TAG_NAME /,\$p" | sed -E 's/^(v[0-9][^ \t]+)[ \t]{6}/\1\
 /')"
             TAG_DIFF="$(git rev-list --count HEAD ^$TAG_HASH)"
 
