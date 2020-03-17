@@ -24,7 +24,8 @@ Go skeleton
 cp %{pjroot}/release/sysvinit sysvinit
 cp %{pjroot}/release/logrotate.conf logrotate.conf
 cp %{pjroot}/release/%{name}.toml config.toml
-echo %{version} > version
+echo "%{version} %{release}" > version
+%{pjroot}/build changelog > changelog
 
 %build
 MAINFILE="%{pjroot}/main.go" %{pjroot}/build %{name} bin
@@ -51,12 +52,14 @@ install %{_builddir}/bin bin/%{name}
 cp %{_builddir}/config.toml conf/%{name}.toml.orig
 cp %{_builddir}/config.toml conf/%{name}.toml
 cp %{_builddir}/version .
+cp %{_builddir}/changelog .
 
 %files
 /etc/init.d/%{name}
 /etc/logrotate.d/%{name}
 
 %{runroot}/version
+%{runroot}/changelog
 %{runroot}/bin/%{name}
 %{runroot}/conf/%{name}.toml.orig
 

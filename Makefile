@@ -12,6 +12,12 @@ build:
 	rm -f ${TARGET}
 	MAINFILE=${MAINFILE} ./build go-skel ${TARGET}
 
+changelog:
+	@./build changelog
+
+env:
+	@./build env
+
 clean:
 	rm -rf ./bin *.rpm
 	./release/rpm/make clean

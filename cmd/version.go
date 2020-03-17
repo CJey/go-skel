@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -34,33 +35,29 @@ gitStatusHash: 7 chars at the hash code's head which indicate different
 func init() {
 	cmd := cmdVersion
 
-	cmd.PersistentFlags().Bool("tag", false, "Show info about git tag")
+	cmd.PersistentFlags().Bool("changelog", false, "Show info about git tag history")
+	cmd.PersistentFlags().Uint("max-lines", 32, "If show changelog, the max lines to show, 0 means unlimit")
 
-	viper.BindPFlag("tag", cmd.PersistentFlags().Lookup("tag"))
+	viper.BindPFlag("changelog", cmd.PersistentFlags().Lookup("changelog"))
+	viper.BindPFlag("max-lines", cmd.PersistentFlags().Lookup("max-lines"))
 
 	cmdRoot.AddCommand(cmd)
 }
 
 func runVersion(cmd *cobra.Command, args []string) {
-	var tpl *template.Template
-	if viper.GetBool("tag") {
-		if app.App().Git.TagName == "" {
-			return
+	if viper.GetBool("changelog") {
+		changelog := strings.TrimSpace(app.App().Git.TagMessage)
+		maxline := viper.GetUint("max-lines")
+		lines := strings.Split(changelog, "\n")
+		if maxline > 0 && maxline < uint(len(lines)) {
+			lines = lines[:maxline]
+			changelog = strings.Join(lines, "\n")
 		}
-		tpl = template.Must(template.New("info").Parse(`
-AppName     {{.Name}}
-TagName     {{.Git.TagName}}
-{{if .Git.TagTrace}}
-TagTrace    {{.Git.TagTrace}}{{if .Git.Branch}}
-GitBranch   {{.Git.Branch}}{{end}}{{if .Git.Repo}}
-GitRepo     {{.Git.Repo}}{{end}}
-TagHash     {{.Git.TagHash}} @ {{.Git.TagTimeString}}{{end}}
----
+		fmt.Println(changelog)
+		return
+	}
 
-{{.Git.TagMessage}}
-`))
-	} else {
-		tpl = template.Must(template.New("info").Parse(`
+	tpl := template.Must(template.New("info").Parse(`
 AppName     {{.Name}}
 Version     {{.Version}}-{{.Release}}
 {{if .Git.Trace}}
@@ -72,7 +69,6 @@ GitHash     {{.Git.CommitHash}} @ {{.Git.CommitTimeString}}
 Golang      {{.Go.Version}} {{.Go.Arch}}
 BuildInfo   {{.Build.ID}} @ {{.Build.TimeString}}
 `))
-	}
 
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, app.App()); err != nil {

@@ -92,7 +92,7 @@ __env() {
             TAG_TIME="$(git log -n1 $TAG_HASH --pretty=format:%at)"
             TAG_NUMBER="$(git rev-list --count $TAG_HASH)"
 
-            TAG_MESSAGE="$(git tag -v "$TAG_NAME" 2>/dev/null | tail -n +6)"
+            TAG_MESSAGE="$(git tag -l v[0-9]* -n100 --sort=-v:refname | sed -r 's/^(v[0-9][^ \t]+)[ \t]{6}/\1\n/')"
             TAG_DIFF="$(git rev-list --count HEAD ^$TAG_HASH)"
 
             VERSION="$(echo $TAG_NAME | cut -c2-)"
@@ -138,8 +138,13 @@ if [ "$APPNAME" = "env" ]; then
         echo "TAG_TIME=$TAG_TIME"
         echo "TAG_NUMBER=$TAG_NUMBER"
         echo "TAG_DIFF=$TAG_DIFF"
-        echo "TAG_MESSAGE=$TAG_MESSAGE"
     fi
+    exit
+fi
+
+if [ "$APPNAME" = "changelog" ]; then
+    __env
+    echo "$TAG_MESSAGE"
     exit
 fi
 
@@ -171,7 +176,7 @@ __build() {
         -X '$MODULE/app.tagTime=$TAG_TIME' \
         -X '$MODULE/app.tagNumber=$TAG_NUMBER' \
         -X '$MODULE/app.tagDiff=$TAG_DIFF' \
-        -X '$MODULE/app.tagMessage=$TAG_MESSAGE' \
+        -X '$MODULE/app.tagMessage=$(echo "$TAG_MESSAGE" | head -c 51200 | base64)' \
         -X '$MODULE/app.gitStatusNumber=$GIT_STATUS_NUMBER' \
         -X '$MODULE/app.gitStatusHash=$GIT_STATUS_HASH' \
         -X '$MODULE/app.buildID=$BUILD_ID' \

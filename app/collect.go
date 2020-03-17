@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/base64"
 	"strings"
 	"time"
 
@@ -68,7 +69,7 @@ func collectInfo(app *Application) {
 	git.TagTimeString = git.TagTime.Format(tf)
 	git.TagTrace = beTrace(git.TagNumber, git.TagHash)
 	git.TagDiff = beUint(tagDiff)
-	git.TagMessage = tagMessage
+	git.TagMessage = base64d(tagMessage)
 
 	git.StatusHash = gitStatusHash
 	git.StatusNumber = beUint(gitStatusNumber)
@@ -91,4 +92,12 @@ func collectInfo(app *Application) {
 	app.Build.Time = beTime(buildTime)
 	app.Build.TimeString = app.Build.Time.Format(tf)
 	app.Build.Magic = buildMagic
+}
+
+func base64d(enc string) string {
+	data, err := base64.StdEncoding.DecodeString(enc)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
 }
