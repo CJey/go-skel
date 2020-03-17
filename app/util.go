@@ -40,10 +40,7 @@ func beTime(s string) time.Time {
 		}
 	}
 	if len(ss) > 1 && len(ss[1]) > 0 {
-		nsec, err = strconv.ParseInt(ss[1], 10, 64)
-		if err != nil {
-			panic(err)
-		}
+		nsec, _ = strconv.ParseInt(ss[1], 10, 64)
 	}
 
 	return time.Unix(sec, nsec)

@@ -7,6 +7,7 @@
 *.gz
 *.tgz
 *.rpm
+.vscode
 /bin
 /logs
 /tmp
