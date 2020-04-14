@@ -6,12 +6,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"go-skel/context"
+	"github.com/cjey/gbase"
 )
 
-var _ = fmt.Print
-
-var cmdFoo = &cobra.Command{
+var _CMDFoo = &cobra.Command{
 	Use:   `foo`,
 	Run:   runFoo,
 	Short: `Example cases`,
@@ -19,27 +17,32 @@ var cmdFoo = &cobra.Command{
 }
 
 func init() {
-	cmd := cmdFoo
+	var cmd = _CMDFoo
 	supportConfigAndLogger(cmd)
 
+	// --hello world!
 	cmd.PersistentFlags().String("hello", "world!", "for testing")
-	viper.BindPFlag("hello", cmd.PersistentFlags().Lookup("hello"))
 
-	//cmdRoot.AddCommand(cmd)
+	_CMDRoot.AddCommand(cmd)
 }
 
 func runFoo(cmd *cobra.Command, args []string) {
 	handleConfigAndLogger(cmd)
+
+	// bind flags
+	viper.BindPFlag("hello", cmd.PersistentFlags().Lookup("hello"))
+
 	fmt.Printf("Hello %s\n\n", viper.GetString("hello"))
 
-	ctx := context.Background("foo")
-	ctx.L.Debugw("bar", "my level", "debug")
-	ctx.L.Infow("bar", "my level", "info")
-	ctx.L.Warnw("bar", "my level", "warn")
-	ctx.L.Errorw("bar", "my level", "error")
-	ctx1 := ctx.New("bar")
-	ctx1.L.Debugw("bar", "my level", "debug")
-	ctx1.L.Infow("bar", "my level", "info")
-	ctx1.L.Warnw("bar", "my level", "warn")
-	ctx1.L.Errorw("bar", "my level", "error")
+	var ctx = gbase.NamedContext("foo")
+	ctx.Debug("bar", "my level", "debug")
+	ctx.Info("bar", "my level", "info")
+	ctx.Warn("bar", "my level", "warn")
+	ctx.Error("bar", "my level", "error")
+
+	var ctx1 = ctx.ForkAt("bar")
+	ctx1.Debug("bar", "my level", "debug")
+	ctx1.Info("bar", "my level", "info")
+	ctx1.Warn("bar", "my level", "warn")
+	ctx1.Error("bar", "my level", "error")
 }

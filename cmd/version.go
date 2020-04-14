@@ -12,7 +12,7 @@ import (
 	"go-skel/app"
 )
 
-var cmdVersion = &cobra.Command{
+var _CMDVersion = &cobra.Command{
 	Use:   `version`,
 	Run:   runVersion,
 	Short: `Show full version infomation.`,
@@ -33,22 +33,28 @@ gitStatusHash: 7 chars at the hash code's head which indicate different
 }
 
 func init() {
-	cmd := cmdVersion
+	var cmd = _CMDVersion
 
+	// do not bind, flag only
+	// --changelog=false
 	cmd.PersistentFlags().Bool("changelog", false, "Show info about git tag history")
+	// --max-lines 32
 	cmd.PersistentFlags().Uint("max-lines", 32, "If show changelog, the max lines to show, 0 means unlimit")
 
-	viper.BindPFlag("changelog", cmd.PersistentFlags().Lookup("changelog"))
-	viper.BindPFlag("max-lines", cmd.PersistentFlags().Lookup("max-lines"))
-
-	cmdRoot.AddCommand(cmd)
+	_CMDRoot.AddCommand(cmd)
 }
 
 func runVersion(cmd *cobra.Command, args []string) {
-	if viper.GetBool("changelog") {
-		changelog := strings.TrimSpace(app.App().Git.TagMessage)
-		maxline := viper.GetUint("max-lines")
-		lines := strings.Split(changelog, "\n")
+	// bind flags
+	viper.BindPFlag("changelog", cmd.PersistentFlags().Lookup("changelog"))
+	viper.BindPFlag("max-lines", cmd.PersistentFlags().Lookup("max-lines"))
+
+	if showChangelog, _ := cmd.Flags().GetBool("changelog"); showChangelog {
+		var (
+			changelog  = strings.TrimSpace(app.App().Git.TagMessage)
+			maxline, _ = cmd.Flags().GetUint("max-lines")
+			lines      = strings.Split(changelog, "\n")
+		)
 		if maxline > 0 && maxline < uint(len(lines)) {
 			lines = lines[:maxline]
 			changelog = strings.Join(lines, "\n")
@@ -57,7 +63,7 @@ func runVersion(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	tpl := template.Must(template.New("info").Parse(`
+	var tpl = template.Must(template.New("info").Parse(`
 AppName     {{.Name}}
 Version     {{.Version}}-{{.Release}}
 {{if .Git.Trace}}
