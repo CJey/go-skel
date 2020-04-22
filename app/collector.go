@@ -87,6 +87,13 @@ func collectInfo(app *Application) {
 	app.Build.Time = beTime(buildTime)
 	app.Build.TimeString = app.Build.Time.Format(tf)
 	app.Build.Magic = buildMagic
+
+	// fullversion
+	if len(git.CommitHash) >= 7 {
+		app.FullVersion = app.Version + "-" + strconv.Itoa(int(app.Release)) + "." + git.CommitHash[:7]
+	} else {
+		app.FullVersion = app.Version + "-" + strconv.Itoa(int(app.Release))
+	}
 }
 
 func base64d(enc string) string {

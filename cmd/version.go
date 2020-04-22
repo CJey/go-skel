@@ -65,7 +65,7 @@ func runVersion(cmd *cobra.Command, args []string) {
 
 	var tpl = template.Must(template.New("info").Parse(`
 AppName     {{.Name}}
-Version     {{.Version}}-{{.Release}}
+Version     {{.FullVersion}}
 {{if .Git.Trace}}
 GitTrace    {{.Git.Trace}}{{if .Git.Branch}}
 GitBranch   {{.Git.Branch}}{{end}}{{if .Git.Repo}}

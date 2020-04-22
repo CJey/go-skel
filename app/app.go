@@ -16,34 +16,37 @@ import (
 
 var (
 	// 默认的App，所有搜集到的编译环境信息都在其中
-	_APP Application
+	app Application
 
-	ID      string // app.Build.ID
-	Name    string // app.Name
-	Trace   string // app.Git.Trace
-	Version string // app.Version
-	Release uint   // app.Release
+	ID          string // app.Build.ID
+	Name        string // app.Name
+	Trace       string // app.Git.Trace
+	Version     string // app.Version
+	Release     uint   // app.Release
+	FullVersion string // app.FullVersion
 )
 
 func init() {
-	collectInfo(&_APP)
+	collectInfo(&app)
 
-	ID = _APP.Build.ID
-	Name = _APP.Name
-	Trace = _APP.Git.Trace
-	Version = _APP.Version
-	Release = _APP.Release
+	ID = app.Build.ID
+	Name = app.Name
+	Trace = app.Git.Trace
+	Version = app.Version
+	Release = app.Release
+	FullVersion = app.FullVersion
 }
 
 func App() Application {
-	return _APP
+	return app
 }
 
 // Application，描述应用程序编译时的环境信息
 type Application struct {
-	Name    string // 名称
-	Version string // 语义化版本
-	Release uint   // 第几次发布
+	Name        string // 名称
+	Version     string // 语义化版本
+	Release     uint   // 第几次发布
+	FullVersion string // 完整版本
 
 	Git struct {
 		Repo   string // 编译分支所track的upstream地址

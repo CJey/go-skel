@@ -9,6 +9,7 @@ PJROOT="$(dirname "$(dirname "$ROOT")")"
 VERSION="0.0.1"
 RELEASE=1
 if which git 2>/dev/null > /dev/null && git status 2>/dev/null >/dev/null; then
+    GIT_HASH="$(git log -n1 --pretty=format:%H 2>/dev/null | head -c7)"
 	TAG_NAME="$(git describe --long --match v[0-9]* 2>/dev/null | grep -oP '.*(?=-\d+-g.{7,}$)')"
 	if [ -n "$TAG_NAME" ]; then
 		TAG_HASH="$(git tag -l "$TAG_NAME" --format '%(object)')"
@@ -17,6 +18,7 @@ if which git 2>/dev/null > /dev/null && git status 2>/dev/null >/dev/null; then
 		VERSION="$(echo $TAG_NAME | cut -c2-)"
 		RELEASE="$((1+TAG_DIFF))"
 	fi
+    RELEASE="$RELEASE.$GIT_HASH"
 fi
 RUNROOT="/opt/$APPNAME"
 

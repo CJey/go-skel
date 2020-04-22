@@ -84,7 +84,7 @@ __env() {
     BUILD_ID="$(head -c 128 /dev/urandom | hash | cut -d' ' -f1)"
     BUILD_TIME="$(date +%s.%N)"
 
-    if [ -n "$GIT_REPO" ]; then
+    if [ -n "$GIT_HASH" ]; then
         GIT_TIME="$(git log -n1 --pretty=format:%at 2>/dev/null)"
         GIT_NUMBER="$(git rev-list --count HEAD 2>/dev/null)"
 
@@ -116,8 +116,11 @@ __build_magic
 if [ "$APPNAME" = "env" ]; then
     __env
     echo "MODULE=$MODULE"
-    echo "VERSION=$VERSION"
-    echo "RELEASE=$RELEASE"
+    if [ -n "$GIT_HASH" ]; then
+        echo "VERSION=$VERSION-$RELEASE.$(echo "$GIT_HASH" | head -c7)"
+    else
+        echo "VERSION=$VERSION-$RELEASE"
+    fi
     echo
     echo "GIT_REPO=$GIT_REPO"
     echo "GIT_BRANCH=$GIT_BRANCH"
