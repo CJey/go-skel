@@ -16,29 +16,29 @@ import (
 
 var (
 	// 默认的App，所有搜集到的编译环境信息都在其中
-	app Application
+	_App Application
 
-	ID          string // app.Build.ID
-	Name        string // app.Name
-	Trace       string // app.Git.Trace
-	Version     string // app.Version
-	Release     uint   // app.Release
-	FullVersion string // app.FullVersion
+	ID          string // _App.Build.ID
+	Name        string // _App.Name
+	Trace       string // _App.Git.Trace
+	Version     string // _App.Version
+	Release     uint   // _App.Release
+	FullVersion string // _App.FullVersion
 )
 
 func init() {
-	collectInfo(&app)
+	collectInfo(&_App)
 
-	ID = app.Build.ID
-	Name = app.Name
-	Trace = app.Git.Trace
-	Version = app.Version
-	Release = app.Release
-	FullVersion = app.FullVersion
+	ID = _App.Build.ID
+	Name = _App.Name
+	Trace = _App.Git.Trace
+	Version = _App.Version
+	Release = _App.Release
+	FullVersion = _App.FullVersion
 }
 
 func App() Application {
-	return app
+	return _App
 }
 
 // Application，描述应用程序编译时的环境信息
