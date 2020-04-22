@@ -7,7 +7,6 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"go-skel/app"
 )
@@ -45,10 +44,6 @@ func init() {
 }
 
 func runVersion(cmd *cobra.Command, args []string) {
-	// bind flags
-	viper.BindPFlag("changelog", cmd.PersistentFlags().Lookup("changelog"))
-	viper.BindPFlag("max-lines", cmd.PersistentFlags().Lookup("max-lines"))
-
 	if showChangelog, _ := cmd.Flags().GetBool("changelog"); showChangelog {
 		var (
 			changelog  = strings.TrimSpace(app.App().Git.TagMessage)
