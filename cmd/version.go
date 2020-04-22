@@ -46,12 +46,12 @@ func init() {
 func runVersion(cmd *cobra.Command, args []string) {
 	if showChangelog, _ := cmd.Flags().GetBool("changelog"); showChangelog {
 		var (
-			changelog  = strings.TrimSpace(app.App().Git.TagMessage)
-			maxline, _ = cmd.Flags().GetUint("max-lines")
-			lines      = strings.Split(changelog, "\n")
+			changelog   = strings.TrimSpace(app.App().Git.TagMessage)
+			maxlines, _ = cmd.Flags().GetUint("max-lines")
+			lines       = strings.Split(changelog, "\n")
 		)
-		if maxline > 0 && maxline < uint(len(lines)) {
-			lines = lines[:maxline]
+		if maxlines > 0 && maxlines < uint(len(lines)) {
+			lines = lines[:maxlines]
 			changelog = strings.Join(lines, "\n")
 		}
 		fmt.Println(changelog)
