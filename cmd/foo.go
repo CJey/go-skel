@@ -9,6 +9,7 @@ import (
 	"github.com/cjey/gbase"
 )
 
+// define subcommand
 var _CMDFoo = &cobra.Command{
 	Use:   `foo`,
 	Run:   runFoo,
@@ -16,8 +17,10 @@ var _CMDFoo = &cobra.Command{
 	Long:  ``,
 }
 
+// define flags of subcommand & install to root
 func init() {
 	var cmd = _CMDFoo
+	// if you need config & logger, use support*
 	supportConfigAndLogger(cmd)
 
 	// --hello world!
@@ -26,7 +29,9 @@ func init() {
 	_CMDRoot.AddCommand(cmd)
 }
 
+// subcommand main entry
 func runFoo(cmd *cobra.Command, args []string) {
+	// if you defined support*, must use handle* here
 	handleConfigAndLogger(cmd)
 
 	// bind flags

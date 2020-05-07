@@ -11,6 +11,7 @@ import (
 	"go-skel/app"
 )
 
+// define subcommand
 var _CMDVersion = &cobra.Command{
 	Use:   `version`,
 	Run:   runVersion,
@@ -31,6 +32,7 @@ gitStatusHash: 7 chars at the hash code's head which indicate different
 `,
 }
 
+// define flags of subcommand & install to root
 func init() {
 	var cmd = _CMDVersion
 
@@ -43,6 +45,7 @@ func init() {
 	_CMDRoot.AddCommand(cmd)
 }
 
+// subcommand main entry
 func runVersion(cmd *cobra.Command, args []string) {
 	if showChangelog, _ := cmd.Flags().GetBool("changelog"); showChangelog {
 		var (

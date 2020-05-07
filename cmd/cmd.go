@@ -14,6 +14,7 @@ import (
 	"go-skel/app"
 )
 
+// define root command
 var _CMDRoot = &cobra.Command{
 	Use:   `{{appname}}`,
 	Short: ``,
@@ -30,6 +31,7 @@ func init() {
 	supportConfigAndLogger(_CMDRoot)
 }
 
+// execute root command
 func Execute() {
 	if err := _CMDRoot.Execute(); err != nil {
 		os.Exit(1)
@@ -97,10 +99,18 @@ func handleLogger(cmd *cobra.Command) {
 	viper.BindPFlag("log.encoding", cmd.Flags().Lookup("log-encoding"))
 	viper.BindPFlag("log.show-caller", cmd.Flags().Lookup("log-show-caller"))
 
-	gbase.ReplaceZapLogger(
+	var _, err = gbase.ReplaceZapLogger(
 		viper.GetString("log.level"),
 		viper.GetString("log.file"),
 		viper.GetString("log.encoding"),
 		viper.GetBool("log.show-caller"),
 	)
+	if err != nil {
+		zap.S().Fatalw("Replace zap logger fail", "err", err,
+			"level", viper.GetString("log.level"),
+			"file", viper.GetString("log.file"),
+			"encoding", viper.GetString("log.encoding"),
+			"show-caller", viper.GetString("log.show-caller"),
+		)
+	}
 }
