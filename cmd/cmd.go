@@ -110,7 +110,7 @@ func handleLogger(cmd *cobra.Command) {
 			"level", viper.GetString("log.level"),
 			"file", viper.GetString("log.file"),
 			"encoding", viper.GetString("log.encoding"),
-			"show-caller", viper.GetString("log.show-caller"),
+			"show-caller", viper.GetBool("log.show-caller"),
 		)
 	}
 }
