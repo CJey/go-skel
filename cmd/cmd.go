@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -112,5 +113,22 @@ func handleLogger(cmd *cobra.Command) {
 			"encoding", viper.GetString("log.encoding"),
 			"show-caller", viper.GetBool("log.show-caller"),
 		)
+	}
+}
+
+func signalName(sig os.Signal) string {
+	switch sig {
+	case syscall.SIGUSR1:
+		return "SIGUSR1"
+	case syscall.SIGUSR2:
+		return "SIGUSR2"
+	case syscall.SIGINT:
+		return "SIGINT"
+	case syscall.SIGHUP:
+		return "SIGHUP"
+	case syscall.SIGTERM:
+		return "SIGTERM"
+	default:
+		return sig.String()
 	}
 }
