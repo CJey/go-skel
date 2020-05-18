@@ -55,10 +55,10 @@ func init() {
 
 	// --listen 0.0.0.0:LISTEN_PORT
 	cmd.PersistentFlags().String("listen", strconv.Itoa(LISTEN_PORT),
-		"listening address")
+		"listening address for demo Http service")
 	// --listen-grpc 0.0.0.0:GRPC_LISTEN_PORT
 	cmd.PersistentFlags().String("listen-grpc", strconv.Itoa(GRPC_LISTEN_PORT),
-		"listening address")
+		"listening address for demo Grpc service")
 
 	// do not bind, flag only
 	// --nake=false
@@ -123,7 +123,7 @@ func runServeWithOverseer(cmd *cobra.Command, args []string) {
 				ctx.Info("Graceful shutdown signal received")
 
 				// diff * with #, means shutting down
-				apptitle = app.Name + "#" + os.Getenv("OVERSEER_SLAVE_ID")
+				apptitle = app.Name + "*" + os.Getenv("OVERSEER_SLAVE_ID")
 				cancel()
 			}()
 
