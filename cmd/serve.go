@@ -28,15 +28,18 @@ import (
 )
 
 const (
-	HTTP_LISTEN_PORT = 1234 // --listen-http default port
+	LISTEN_PORT      = 1234 // --listen default port
 	GRPC_LISTEN_PORT = 4321 // --listen-grpc default port
 )
 
 var (
 	_ = fmt.Print
 
-	_NumHTTP int64
-	_NumGRPC int64
+	_Counter = struct {
+		Tcp  int64
+		Http int64
+		Grpc int64
+	}{}
 
 	_CMDServe = &cobra.Command{
 		Use:   `serve`,
@@ -51,8 +54,9 @@ func init() {
 	supportConfigAndLogger(cmd)
 
 	// --listen 0.0.0.0:LISTEN_PORT
-	cmd.PersistentFlags().String("listen-http", strconv.Itoa(HTTP_LISTEN_PORT),
+	cmd.PersistentFlags().String("listen", strconv.Itoa(LISTEN_PORT),
 		"listening address")
+	// --listen-grpc 0.0.0.0:GRPC_LISTEN_PORT
 	cmd.PersistentFlags().String("listen-grpc", strconv.Itoa(GRPC_LISTEN_PORT),
 		"listening address")
 
@@ -71,7 +75,7 @@ func runServe(cmd *cobra.Command, args []string) {
 	handleConfigAndLogger(cmd)
 
 	// bind flags
-	viper.BindPFlag("listen-http", cmd.PersistentFlags().Lookup("listen-http"))
+	viper.BindPFlag("listen", cmd.PersistentFlags().Lookup("listen"))
 	viper.BindPFlag("listen-grpc", cmd.PersistentFlags().Lookup("listen-grpc"))
 
 	var naked, _ = cmd.Flags().GetBool("nake")
@@ -167,8 +171,8 @@ func runServeWithOverseer(cmd *cobra.Command, args []string) {
 
 			// use process name to expose core runtime information every 1s
 			gbase.LiveProcessName(ctx, 1*time.Second, func(int) string {
-				return fmt.Sprintf("%s [H%d G%d] v%s", apptitle,
-					_NumHTTP, _NumGRPC,
+				return fmt.Sprintf("%s [T%d H%d G%d] v%s", apptitle,
+					_Counter.Tcp, _Counter.Http, _Counter.Grpc,
 					app.FullVersion,
 				)
 			})
@@ -277,10 +281,10 @@ func runServeDirectly(cmd *cobra.Command, args []string) {
 }
 
 func serveCheckBasicConfig(ctx gbase.Context, cmd *cobra.Command) (string, string, syscall.Signal) {
-	// check config --listen-http
-	addrHTTP, err := gbase.ResolveTCPAddr(ctx, viper.GetString("listen-http"), HTTP_LISTEN_PORT)
+	// check config --listen
+	addrHTTP, err := gbase.ResolveTCPAddr(ctx, viper.GetString("listen"), LISTEN_PORT)
 	if err != nil {
-		ctx.Fatal("Invalid address", "err", err, "listen", viper.GetString("listen-http"))
+		ctx.Fatal("Invalid address", "err", err, "listen", viper.GetString("listen"))
 	}
 	// check config --listen-grpc
 	addrGRPC, err := gbase.ResolveTCPAddr(ctx, viper.GetString("listen-grpc"), GRPC_LISTEN_PORT)
@@ -345,9 +349,18 @@ func serve(ctx gbase.Context, cmd *cobra.Command, args []string, lsnHTTP, lsnGRP
 			IdleTimeout:       60 * time.Second,
 			WriteTimeout:      30 * time.Second,
 			ReadHeaderTimeout: 30 * time.Second,
+			ConnState: func(conn net.Conn, state http.ConnState) {
+				switch state {
+				case http.StateNew:
+					atomic.AddInt64(&_Counter.Tcp, 1)
+				case http.StateClosed:
+					atomic.AddInt64(&_Counter.Tcp, -1)
+				}
+			},
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				atomic.AddInt64(&_NumHTTP, 1)
-				defer atomic.AddInt64(&_NumHTTP, -1)
+				atomic.AddInt64(&_Counter.Http, 1)
+				defer atomic.AddInt64(&_Counter.Http, -1)
+				var ctx = gbase.SessionContext()
 
 				ctx.Info("new HTTP request", "method", r.Method, "path", r.URL.Path, "remote", r.RemoteAddr)
 				defer ctx.Info("end HTTP request")
@@ -396,8 +409,8 @@ func serve(ctx gbase.Context, cmd *cobra.Command, args []string, lsnHTTP, lsnGRP
 
 		var interceptor = func(gctx context.Context, req interface{},
 			info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (rep interface{}, err error) {
-			atomic.AddInt64(&_NumGRPC, 1)
-			defer atomic.AddInt64(&_NumGRPC, -1)
+			atomic.AddInt64(&_Counter.Grpc, 1)
+			defer atomic.AddInt64(&_Counter.Grpc, -1)
 
 			return handler(gctx, req)
 		}
