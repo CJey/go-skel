@@ -327,9 +327,7 @@ func serve(ctx gbase.Context, cmd *cobra.Command, args []string, lsnHTTP, lsnGRP
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer once.Do(func() {
-			close(end)
-		})
+		defer boom()
 
 		select {
 		case <-end:
