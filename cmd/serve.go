@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jpillora/overseer"
+	"github.com/cjey/overseer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
