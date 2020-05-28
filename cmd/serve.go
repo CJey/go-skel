@@ -341,7 +341,7 @@ func serve(ctx gbase.Context, cmd *cobra.Command, args []string, lsnHTTP, lsnGRP
 		// create
 		var ctx = gbase.NamedContext(ctx.Name() + ".http")
 		var srv = http.Server{
-			IdleTimeout:       1 * time.Second,
+			IdleTimeout:       1 * time.Hour,
 			WriteTimeout:      30 * time.Second,
 			ReadHeaderTimeout: 30 * time.Second,
 			ConnState: func(conn net.Conn, state http.ConnState) {
