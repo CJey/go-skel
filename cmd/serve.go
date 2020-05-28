@@ -88,13 +88,10 @@ func runServe(cmd *cobra.Command, args []string) {
 
 func runServeWithOverseer(cmd *cobra.Command, args []string) {
 	var ctx gbase.Context
-	// WARNING: unexported method at overseer source code
-	var isMaster = os.Getenv("OVERSEER_IS_SLAVE") != "1"
-
-	if isMaster {
+	if overseer.IsMaster() {
 		ctx = gbase.NamedContext("overseer-master$" + strconv.Itoa(os.Getpid()))
 	} else {
-		ctx = gbase.NamedContext("overseer-worker#" + os.Getenv("OVERSEER_SLAVE_ID") + "$" + strconv.Itoa(os.Getpid()))
+		ctx = gbase.NamedContext("overseer-worker#" + overseer.SlaveID() + "$" + strconv.Itoa(os.Getpid()))
 	}
 	defer ctx.Logger().Sync()
 
@@ -110,9 +107,9 @@ func runServeWithOverseer(cmd *cobra.Command, args []string) {
 			var (
 				lsnHTTP     = state.Listeners[0]
 				lsnGRPC     = state.Listeners[1]
-				apptitle    = app.Name + "#" + os.Getenv("OVERSEER_SLAVE_ID")
+				apptitle    = app.Name + "#" + overseer.SlaveID()
 				ctx, cancel = gbase.NamedContext(
-					app.Name + "#" + os.Getenv("OVERSEER_SLAVE_ID") + "$" + strconv.Itoa(os.Getpid()),
+					app.Name + "#" + overseer.SlaveID() + "$" + strconv.Itoa(os.Getpid()),
 				).WithCancel()
 			)
 			defer ctx.Logger().Sync()
@@ -123,7 +120,7 @@ func runServeWithOverseer(cmd *cobra.Command, args []string) {
 				ctx.Info("Graceful shutdown signal received")
 
 				// diff * with #, means shutting down
-				apptitle = app.Name + "*" + os.Getenv("OVERSEER_SLAVE_ID")
+				apptitle = app.Name + "*" + overseer.SlaveID()
 				cancel()
 			}()
 
@@ -182,7 +179,7 @@ func runServeWithOverseer(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	if isMaster {
+	if overseer.IsMaster() {
 		gbase.WriteMyPID(ctx, app.Name)
 		// sigGrace send to overseer master, trigger gracefully restart
 		// sigGrace send to overseer worker, trigger gracefully shutdown
@@ -199,7 +196,7 @@ func runServeWithOverseer(cmd *cobra.Command, args []string) {
 			break
 		}
 
-		if isMaster {
+		if overseer.IsMaster() {
 			if e, ok := err.(*net.OpError); ok && e.Op == "listen" {
 				ctx.Fatal("Listen failed", "addrs", ocfg.Addresses, "err", err)
 				break
@@ -344,7 +341,7 @@ func serve(ctx gbase.Context, cmd *cobra.Command, args []string, lsnHTTP, lsnGRP
 		// create
 		var ctx = gbase.NamedContext(ctx.Name() + ".http")
 		var srv = http.Server{
-			IdleTimeout:       60 * time.Second,
+			IdleTimeout:       1 * time.Second,
 			WriteTimeout:      30 * time.Second,
 			ReadHeaderTimeout: 30 * time.Second,
 			ConnState: func(conn net.Conn, state http.ConnState) {
@@ -417,10 +414,10 @@ func serve(ctx gbase.Context, cmd *cobra.Command, args []string, lsnHTTP, lsnGRP
 		var ctx = gbase.NamedContext(ctx.Name() + ".grpc")
 		var srv = grpc.NewServer(
 			grpc.UnaryInterceptor(interceptor),
-			grpc.ConnectionTimeout(5*time.Second),
+			grpc.ConnectionTimeout(30*time.Second),
 			grpc.KeepaliveParams(keepalive.ServerParameters{
-				MaxConnectionIdle: 60 * time.Second,
-				MaxConnectionAge:  300 * time.Second,
+				MaxConnectionIdle: 1 * time.Hour,
+				MaxConnectionAge:  24 * time.Hour,
 			}),
 		)
 

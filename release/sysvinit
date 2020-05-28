@@ -14,7 +14,7 @@ dir="${{INSTALL_ROOT}}"
 
 bin="$dir/bin/$name"
 cfg="$dir/conf/$name.toml"
-args="--config $cfg"
+args="serve --config $cfg"
 cmd="$bin $args"
 
 pid_file="/var/run/$name.pid"
@@ -53,7 +53,7 @@ case "$1" in
     if is_running; then
         echo -n "Stopping $name.."
         kill `get_pid`
-        for i in 1 2 3 4 5 6 7 8 9 10
+        while true
         do
             if ! is_running; then
                 break
